@@ -16,7 +16,7 @@
 3. Click **New Project**
 4. Fill in:
    - **Name:** SpendWise
-   - **Database Password:** pick a strong one and save it
+   - **Database Password:** SpendwiseforNisarg
    - **Region:** pick the closest to you (e.g. US East)
 5. Click **Create new project** — wait ~1 minute
 

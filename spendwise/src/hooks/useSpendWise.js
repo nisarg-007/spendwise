@@ -266,6 +266,12 @@ export function useSubscriptions(userId) {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading]             = useState(true);
 
+  // Normalize DB snake_case → UI camelCase
+  const normalizeSub = (row) => ({
+    ...row,
+    nextDue: row.next_due,
+  });
+
   const fetch = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
@@ -281,9 +287,18 @@ export function useSubscriptions(userId) {
   useEffect(() => { fetch(); }, [fetch]);
 
   const addSubscription = async (sub) => {
+    const row = {
+      user_id: userId,
+      name:     sub.name,
+      icon:     sub.icon,
+      amount:   sub.amount,
+      cycle:    sub.cycle,
+      next_due: sub.nextDue || sub.next_due || null,
+      color:    sub.color,
+    };
     const { data, error } = await supabase
       .from('subscriptions')
-      .insert({ ...sub, user_id: userId })
+      .insert(row)
       .select()
       .single();
     if (error) throw error;
@@ -299,7 +314,12 @@ export function useSubscriptions(userId) {
     setSubscriptions(prev => prev.filter(s => s.id !== id));
   };
 
-  return { subscriptions, loading, addSubscription, deleteSubscription };
+  return {
+    subscriptions: subscriptions.map(normalizeSub),
+    loading,
+    addSubscription,
+    deleteSubscription,
+  };
 }
 
 // ── WIDGET CONFIG HOOK ────────────────────────────────────────

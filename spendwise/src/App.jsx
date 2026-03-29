@@ -1,4 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from 'react';
+import {
+  useAuth,
+  useAccounts,
+  useTransactions,
+  useBudgets,
+  useSavingsGoals,
+  useSubscriptions,
+  useWidgetConfig,
+} from './hooks/useSpendWise';
 
 // ─── GOOGLE FONTS + GLOBAL CSS ────────────────────────────────────────────────
 const G = `
@@ -1356,30 +1365,185 @@ function AddTxModal({accounts,onClose,onAdd}){
   );
 }
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// AUTH SCREEN  (shown when user is not logged in)
+// ─────────────────────────────────────────────────────────────
+const AUTH_STYLE = `
+  .auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:32px 28px;}
+  .auth-logo{font-size:48px;margin-bottom:8px;}
+  .auth-title{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;}
+  .auth-sub{font-size:13px;color:var(--t2);margin-bottom:36px;text-align:center;}
+  .auth-card{width:100%;background:var(--s1);border:1px solid var(--border2);border-radius:24px;padding:24px;}
+  .auth-tabs{display:flex;background:var(--s2);border-radius:14px;padding:4px;margin-bottom:20px;}
+  .auth-tab{flex:1;padding:10px;border-radius:11px;border:none;background:transparent;
+    color:var(--t2);font-family:var(--font);font-size:13px;font-weight:800;cursor:pointer;transition:all .2s;}
+  .auth-tab.active{background:var(--indigo);color:#fff;}
+  .auth-err{background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.25);border-radius:12px;
+    padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:12px;font-weight:600;}
+  .auth-ok{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:12px;
+    padding:10px 14px;font-size:12px;color:var(--green);margin-bottom:12px;font-weight:600;}
+`;
+
+function AuthScreen({ onSignIn, onSignUp }) {
+  const [mode, setMode]       = useState('signin');   // 'signin' | 'signup'
+  const [email, setEmail]     = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError]     = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handle = async () => {
+    setError(''); setSuccess('');
+    if (!email || !password) { setError('Please fill in all fields.'); return; }
+    setLoading(true);
+    try {
+      if (mode === 'signup') {
+        await onSignUp(email, password);
+        setSuccess('Account created! Check your email to confirm, then sign in.');
+      } else {
+        await onSignIn(email, password);
+      }
+    } catch (e) {
+      setError(e.message || 'Something went wrong.');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="auth-wrap">
+      <style>{AUTH_STYLE}</style>
+      <div className="auth-logo">💸</div>
+      <div className="auth-title">SpendWise</div>
+      <div className="auth-sub">Your personal finance command center</div>
+
+      <div className="auth-card">
+        <div className="auth-tabs">
+          <button className={`auth-tab ${mode==='signin'?'active':''}`} onClick={()=>setMode('signin')}>Sign In</button>
+          <button className={`auth-tab ${mode==='signup'?'active':''}`} onClick={()=>setMode('signup')}>Sign Up</button>
+        </div>
+
+        {error   && <div className="auth-err">⚠ {error}</div>}
+        {success && <div className="auth-ok">✓ {success}</div>}
+
+        <div className="ilb">Email</div>
+        <input className="inp" type="email" placeholder="you@example.com"
+          value={email} onChange={e=>setEmail(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&handle()}/>
+
+        <div className="ilb">Password</div>
+        <input className="inp" type="password" placeholder="Min. 6 characters"
+          value={password} onChange={e=>setPassword(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&handle()}/>
+
+        <button className="btn-p" onClick={handle} disabled={loading} style={{opacity:loading?.6:1}}>
+          {loading ? '...' : mode==='signin' ? 'Sign In →' : 'Create Account →'}
+        </button>
+      </div>
+
+      <div style={{fontSize:11,color:'var(--t3)',marginTop:20,textAlign:'center',lineHeight:1.6}}>
+        Your data is encrypted and private.<br/>Powered by Supabase + Postgres.
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// LOADING SCREEN
+// ─────────────────────────────────────────────────────────────
+function LoadingScreen() {
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
+      <div style={{fontSize:40}}>💸</div>
+      <div style={{fontSize:14,color:'var(--t2)',fontWeight:600}}>Loading your finances...</div>
+      <div style={{width:48,height:4,borderRadius:100,background:'var(--s3)',overflow:'hidden'}}>
+        <div style={{width:'60%',height:'100%',background:'var(--indigo)',borderRadius:100,animation:'pulse 1s ease infinite'}}/>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ROOT APP — wired to Supabase
+// ─────────────────────────────────────────────────────────────
 export default function App(){
+  const { user, loading: authLoading, signUp, signIn, signOut } = useAuth();
+  const uid = user?.id;
+  const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
+  const { transactions, addTransaction, deleteTransaction }     = useTransactions(uid);
+  const { budgets, setBudget }                                  = useBudgets(uid);
+  const { savings, addGoal, updateGoal, deleteGoal }            = useSavingsGoals(uid);
+  const { subscriptions, addSubscription, deleteSubscription }  = useSubscriptions(uid);
+
+  const initW={};
+  ALL_WIDGETS.forEach(w=>{initW[w.id]=w.def;});
+  const { widgets, toggleWidget } = useWidgetConfig(uid, initW);
+
   const [tab,setTab]=useState("home");
-  const [transactions,setTransactions]=useState(INIT_TX);
-  const [accounts,setAccounts]=useState(INIT_ACCTS);
-  const [budgets,setBudgets]=useState(INIT_BUDGETS);
-  const [savings,setSavings]=useState(INIT_SAVINGS);
-  const [subscriptions,setSubscriptions]=useState(INIT_SUBS);
   const [showAddTx,setShowAddTx]=useState(false);
   const [acctModal,setAcctModal]=useState(null);
   const [time,setTime]=useState(new Date());
-
-  // Widget config
-  const initW={};
-  ALL_WIDGETS.forEach(w=>{initW[w.id]=w.def;});
-  const [widgets,setWidgets]=useState(initW);
+  const [moreSub,setMoreSub]=useState("reports");
 
   useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
 
-  const toggleWidget=id=>setWidgets(c=>({...c,[id]:!c[id]}));
-  const addAcct=d=>setAccounts(p=>[...p,{...d,id:"acct_"+Date.now()}]);
-  const updateAcct=d=>setAccounts(p=>p.map(a=>a.id===acctModal.id?{...a,...d}:a));
-  const delAcct=id=>setAccounts(p=>p.filter(a=>a.id!==id));
-  const addTx=tx=>setTransactions(p=>[{...tx,id:Date.now()},...p]);
+  // Auth loading spinner
+  if (authLoading) {
+    return (
+      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#06060F'}}>
+        <style>{G}</style>
+        <LoadingScreen/>
+      </div>
+    );
+  }
+
+  // Login screen
+  if (!user) {
+    return (
+      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',
+        background:'radial-gradient(ellipse 80% 60% at 50% -5%,rgba(123,111,255,0.1) 0%,#000 65%)',padding:16}}>
+        <style>{G}</style>
+        <div style={{width:393,height:852,background:'var(--bg)',borderRadius:52,overflow:'hidden',
+          boxShadow:'0 0 0 1px rgba(255,255,255,0.07),0 80px 180px rgba(0,0,0,0.95)'}}>
+          <AuthScreen onSignIn={signIn} onSignUp={signUp}/>
+        </div>
+      </div>
+    );
+  }
+
+  // Handlers that map UI shape to DB shape
+  const handleAddAccount = async (data) => {
+    await addAccount({
+      type:         data.type,
+      name:         data.name,
+      bank:         data.bank,
+      balance:      data.balance,
+      credit_limit: data.limit,
+      last4:        data.last4,
+      icon:         data.icon,
+      theme_idx:    data.themeIdx,
+      color:        data.color,
+    });
+  };
+
+  const handleUpdateAccount = async (data) => {
+    await updateAccount(acctModal.id, {
+      name:         data.name,
+      bank:         data.bank,
+      balance:      data.balance,
+      credit_limit: data.limit,
+      last4:        data.last4,
+      icon:         data.icon,
+      theme_idx:    data.themeIdx,
+      color:        data.color,
+    });
+  };
+
+  // Normalise DB account row to UI shape
+  const uiAccounts = accounts.map(a => ({
+    ...a,
+    themeIdx: a.theme_idx ?? a.themeIdx,
+    limit:    a.credit_limit ?? a.limit,
+  }));
 
   const timeStr=time.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:false});
 
@@ -1390,9 +1554,6 @@ export default function App(){
     {id:"budget",ic:"◎",lb:"Budget"},
     {id:"more",ic:"⊞",lb:"More"},
   ];
-
-  // "More" sub-nav
-  const [moreSub,setMoreSub]=useState("reports");
 
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
@@ -1406,10 +1567,10 @@ export default function App(){
         </div>
 
         <div className="scr">
-          {tab==="home"&&<HomeScreen accounts={accounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab}/>}
-          {tab==="accounts"&&<AccountsScreen accounts={accounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")}/>}
-          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={accounts}/>}
-          {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={(id,v)=>setBudgets(b=>({...b,[id]:v}))}/>}
+          {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab}/>}
+          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")}/>}
+          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts}/>}
+          {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
           {tab==="more"&&(
             <div>
               <div className="ph au"><div className="ph-t">More</div></div>
@@ -1418,12 +1579,19 @@ export default function App(){
                   <div key={v} className={`chip ${moreSub===v?"on":""}`} onClick={()=>setMoreSub(v)}>{l}</div>
                 ))}
               </div>
-              {moreSub==="reports"&&<ReportsScreen transactions={transactions} accounts={accounts}/>}
-              {moreSub==="subscriptions"&&<SubsScreen subscriptions={subscriptions} setSubscriptions={setSubscriptions}/>}
+              {moreSub==="reports"&&<ReportsScreen transactions={transactions} accounts={uiAccounts}/>}
+              {moreSub==="subscriptions"&&<SubsScreen subscriptions={subscriptions} setSubscriptions={()=>{}}/>}
               {moreSub==="customize"&&<CustomizeScreen widgets={widgets} onToggle={toggleWidget}/>}
             </div>
           )}
         </div>
+
+        {/* Sign Out button */}
+        <button onClick={signOut} style={{position:'absolute',top:60,right:18,
+          background:'rgba(244,63,94,0.1)',border:'none',borderRadius:10,
+          padding:'6px 12px',color:'var(--red)',fontFamily:'var(--font)',fontSize:11,fontWeight:700,cursor:'pointer',zIndex:30}}>
+          Sign Out
+        </button>
 
         <div className="fab" onClick={()=>setShowAddTx(true)}>＋</div>
 
@@ -1436,8 +1604,8 @@ export default function App(){
           ))}
         </div>
 
-        {showAddTx&&<AddTxModal accounts={accounts} onClose={()=>setShowAddTx(false)} onAdd={addTx}/>}
-        {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={acctModal==="new"?addAcct:updateAcct} onDelete={delAcct}/>}
+        {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={addTransaction}/>}
+        {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={acctModal==="new"?handleAddAccount:handleUpdateAccount} onDelete={deleteAccount}/>}
       </div>
     </div>
   );
