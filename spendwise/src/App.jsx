@@ -349,7 +349,8 @@ function BankCardVis({a,onPress}){
 
 // ─── SCREENS ──────────────────────────────────────────────────────────────────
 
-function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab}){
+function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab,onSignOut}){
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const banks = accounts.filter(a=>a.type==="bank");
   const ccs = accounts.filter(a=>a.type==="credit");
   const totalBank = banks.reduce((s,a)=>s+a.balance,0);
@@ -395,7 +396,19 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div style={{fontSize:12,color:"var(--t2)",fontWeight:600}}>Good evening, Nisarg 👋</div>
           <div className="ph-t">Dashboard</div>
         </div>
-        <div className="av">N</div>
+        <div style={{position:'relative'}}>
+          <div className="av" onClick={() => setShowProfileMenu(!showProfileMenu)} style={{cursor:'pointer'}}>N</div>
+          {showProfileMenu && (
+            <div style={{position:'absolute',top:48,right:0,background:'var(--s2)',border:'1px solid var(--border)',borderRadius:12,padding:8,zIndex:100,boxShadow:'0 10px 40px rgba(0,0,0,0.5)',minWidth:140}}>
+              <button 
+                onClick={onSignOut} 
+                style={{width:'100%',padding:'10px 12px',background:'rgba(244,63,94,0.1)',border:'none',borderRadius:8,color:'var(--red)',fontFamily:'var(--font)',fontSize:13,fontWeight:700,cursor:'pointer',textAlign:'left'}}
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* NET WORTH HERO */}
@@ -1567,7 +1580,7 @@ export default function App(){
         </div>
 
         <div className="scr">
-          {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab}/>}
+          {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut}/>}
           {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")}/>}
           {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
@@ -1585,13 +1598,6 @@ export default function App(){
             </div>
           )}
         </div>
-
-        {/* Sign Out button */}
-        <button onClick={signOut} style={{position:'absolute',top:60,right:18,
-          background:'rgba(244,63,94,0.1)',border:'none',borderRadius:10,
-          padding:'6px 12px',color:'var(--red)',fontFamily:'var(--font)',fontSize:11,fontWeight:700,cursor:'pointer',zIndex:30}}>
-          Sign Out
-        </button>
 
         <div className="fab" onClick={()=>setShowAddTx(true)}>＋</div>
 
