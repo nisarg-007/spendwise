@@ -1466,7 +1466,7 @@ function LoadingScreen() {
 // ROOT APP — wired to Supabase
 // ─────────────────────────────────────────────────────────────
 export default function App(){
-  const { user, loading: authLoading, signUp, signIn, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const uid = user?.id;
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
   const { transactions, addTransaction, deleteTransaction }     = useTransactions(uid);
@@ -1486,26 +1486,12 @@ export default function App(){
 
   useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
 
-  // Auth loading spinner
-  if (authLoading) {
+  // Auth loading spinner or missing user fallback
+  if (authLoading || !user) {
     return (
       <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#06060F'}}>
         <style>{G}</style>
         <LoadingScreen/>
-      </div>
-    );
-  }
-
-  // Login screen
-  if (!user) {
-    return (
-      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',
-        background:'radial-gradient(ellipse 80% 60% at 50% -5%,rgba(123,111,255,0.1) 0%,#000 65%)',padding:16}}>
-        <style>{G}</style>
-        <div style={{width:393,height:852,background:'var(--bg)',borderRadius:52,overflow:'hidden',
-          boxShadow:'0 0 0 1px rgba(255,255,255,0.07),0 80px 180px rgba(0,0,0,0.95)'}}>
-          <AuthScreen onSignIn={signIn} onSignUp={signUp}/>
-        </div>
       </div>
     );
   }

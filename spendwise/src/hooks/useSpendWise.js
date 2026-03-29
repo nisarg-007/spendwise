@@ -12,11 +12,47 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get current session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const autoAuth = async () => {
+      const email = 'nisarg007@spendwise.app';
+      const password = 'expenseofnisarg';
+
+      setLoading(true);
+      // 1. Try to get existing session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        setUser(session.user);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Try to sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError && (signInError.message.includes('Invalid login credentials') || signInError.status === 400)) {
+        // 3. If doesn't exist, sign up
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) {
+          console.error("Auto sign-up error:", signUpError);
+        } else {
+          setUser(signUpData.user);
+        }
+      } else if (signInError) {
+        console.error("Auto sign-in error:", signInError);
+      } else {
+        setUser(signInData.user);
+      }
       setLoading(false);
-    });
+    };
+
+    autoAuth();
 
     // Listen for auth state changes (login / logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -25,21 +61,12 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-  };
-
-  const signIn = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
   const signOut = async () => {
+    // We can still support manual sign out if needed, but it will auto-login on refresh
     await supabase.auth.signOut();
   };
 
-  return { user, loading, signUp, signIn, signOut };
+  return { user, loading, signOut, signIn: async () => {}, signUp: async () => {} };
 }
 
 // ── ACCOUNTS HOOK ─────────────────────────────────────────────
