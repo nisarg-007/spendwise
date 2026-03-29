@@ -365,6 +365,23 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 
   const taxDeductible = transactions.filter(t=>t.taxDeductible&&t.type==="expense").reduce((s,t)=>s+t.amount,0);
 
+  // Forecasting logic
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const currentDay = now.getDate();
+
+  const monthExpenses = transactions.filter(t => {
+    if (t.type !== "expense") return false;
+    const txDate = new Date(t.date);
+    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+  }).reduce((s,t) => s + t.amount, 0);
+
+  const dailyBurn = currentDay > 0 ? monthExpenses / currentDay : 0;
+  const projectedSpend = dailyBurn * daysInMonth;
+  const totalBudgetLimit = budgets?.reduce((s,b) => s + b.limit, 0) || 0;
+
   const recent = [...transactions].sort((a,b)=>b.id-a.id).slice(0,5);
 
   // weekly spend last 7 days mock
@@ -426,6 +443,39 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
             <span className="pill" style={{background:"rgba(16,185,129,0.12)",color:"#10B981"}}>🏦 {fmtK(totalBank)}</span>
             <span className="pill" style={{background:"rgba(244,63,94,0.12)",color:"#F43F5E"}}>💳 {fmtK(totalCC)} debt</span>
             <span className="pill" style={{background:"rgba(245,158,11,0.12)",color:"#F59E0B"}}>📈 {savingsRate}% saved</span>
+          </div>
+        </div>
+      )}
+
+      {/* END OF MONTH FORECAST WIDGET */}
+      {w.net_worth && (
+        <div className="au d1" style={{margin:"0 18px 14px",background:"var(--s2)",borderRadius:20,padding:"18px 20px",border:"1px solid var(--border)",position:"relative",overflow:"hidden"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+            <div style={{fontSize:18}}>🔮</div>
+            <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>Month-End Forecast</div>
+            <span className="ftag ftag-p" style={{marginLeft:"auto"}}>AI</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:14}}>
+            <div>
+              <div style={{fontSize:11,color:"var(--t2)",marginBottom:4}}>SPENT SO FAR</div>
+              <div style={{fontSize:24,fontWeight:900,color:"var(--text)",fontFamily:"var(--mono)"}}>{fmt(monthExpenses)}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,color:"var(--t2)",marginBottom:4}}>PROJECTED</div>
+              <div style={{fontSize:24,fontWeight:900,color: projectedSpend > (totalBudgetLimit||9999999) ? "var(--red)" : "var(--cyan)",fontFamily:"var(--mono)"}}>{fmt(projectedSpend)}</div>
+            </div>
+          </div>
+          <div className="pt" style={{height:6,background:"var(--bg)",position:"relative"}}>
+            <div className="pf" style={{width:`${Math.min(100,(currentDay/daysInMonth)*100)}%`,background:"var(--cyan)",opacity:0.4}}/>
+            <div className="pf" style={{width:`${Math.min(100,(monthExpenses/(totalBudgetLimit||projectedSpend||1))*100)}%`,background:projectedSpend > (totalBudgetLimit||9999999)?"var(--red)":"var(--indigo)",position:"absolute",left:0,top:0}}/>
+          </div>
+          <div style={{fontSize:11,color:"var(--t2)",marginTop:12,lineHeight:1.4}}>
+            You're spending about <strong style={{color:"var(--text)"}}>{fmt(dailyBurn)}/day</strong>. 
+            At this rate, {totalBudgetLimit > 0 ? (
+              projectedSpend > totalBudgetLimit 
+                ? <span style={{color:"var(--red)"}}>you'll miss your set budget by {fmt(projectedSpend - totalBudgetLimit)}.</span>
+                : <span style={{color:"var(--green)"}}>you'll beat your set budget by {fmt(totalBudgetLimit - projectedSpend)}!</span>
+            ) : "this will be your total spend for the month."}
           </div>
         </div>
       )}
@@ -1399,7 +1449,9 @@ function AddTxModal({accounts,onClose,onAdd}){
   const doAdd=()=>{
     const val=parseFloat(amount);
     if(!val||val<=0||!accountId) return;
-    onAdd({amount:val,category,note:note||CATS.find(c=>c.id===category).lb,type,date:new Date().toISOString().slice(0,10),accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
+    const finalCategory = type === "income" ? "other" : category;
+    const finalNote = note || (type === "income" ? "Income" : CATS.find(c=>c.id===category).lb);
+    onAdd({amount:val,category:finalCategory,note:finalNote,type,date:new Date().toISOString().slice(0,10),accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
     onClose();
   };
 
@@ -1424,36 +1476,41 @@ function AddTxModal({accounts,onClose,onAdd}){
         <div className="sel-row">
           {accounts.map(a=><div key={a.id} className={`chip ${accountId===a.id?"on":""}`} onClick={()=>setAccountId(a.id)}>{a.icon} {a.name.split(" ")[0]}</div>)}
         </div>
-        <div className="ilb">Category</div>
-        <div className="cgrid">
-          {CATS.map(c=>(
-            <div key={c.id} className={`cbtn ${category===c.id?"on":""}`} onClick={()=>setCategory(c.id)}>
-              <span style={{fontSize:18}}>{c.ic}</span>
-              <span className="cbtn-lb">{c.lb}</span>
+        {type === "expense" && (
+          <>
+            <div className="ilb">Category</div>
+            <div className="cgrid">
+              {CATS.map(c=>(
+                <div key={c.id} className={`cbtn ${category===c.id?"on":""}`} onClick={()=>setCategory(c.id)}>
+                  <span style={{fontSize:18}}>{c.ic}</span>
+                  <span className="cbtn-lb">{c.lb}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
         <input className="inp" placeholder="Note..." value={note} onChange={e=>setNote(e.target.value)}/>
         <input className="inp" placeholder="Tags (comma separated): work, travel..." value={tags} onChange={e=>setTags(e.target.value)}/>
 
-        {/* Toggles */}
-        <div style={{display:"flex",gap:12,marginBottom:14}}>
-          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
-            <div>
-              <div style={{fontSize:12,fontWeight:700}}>🔄 Recurring</div>
-              <div style={{fontSize:10,color:"var(--t2)"}}>Monthly auto</div>
+        {type === "expense" && (
+          <div style={{display:"flex",gap:12,marginBottom:14}}>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:700}}>🔄 Recurring</div>
+                <div style={{fontSize:10,color:"var(--t2)"}}>Monthly auto</div>
+              </div>
+              <Toggle on={recurring} onToggle={()=>setRecurring(!recurring)}/>
             </div>
-            <Toggle on={recurring} onToggle={()=>setRecurring(!recurring)}/>
-          </div>
-          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
-            <div>
-              <div style={{fontSize:12,fontWeight:700}}>🧾 Tax</div>
-              <div style={{fontSize:10,color:"var(--t2)"}}>Deductible</div>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:700}}>🧾 Tax</div>
+                <div style={{fontSize:10,color:"var(--t2)"}}>Deductible</div>
+              </div>
+              <Toggle on={taxDed} onToggle={()=>setTaxDed(!taxDed)}/>
             </div>
-            <Toggle on={taxDed} onToggle={()=>setTaxDed(!taxDed)}/>
           </div>
-        </div>
-        <button className="btn-p" onClick={doAdd}>Add {type==="income"?"Income":"Expense"}</button>
+        )}
+        <button className="btn-p" style={{marginTop: type === 'income' ? 14 : 0}} onClick={doAdd}>Add {type==="income"?"Income":"Expense"}</button>
       </div>
     </div>
   );
