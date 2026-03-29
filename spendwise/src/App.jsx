@@ -25,7 +25,12 @@ const G = `
 }
 body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hidden;}
 
-/* ── PHONE ── */
+/* ── LAYOUT ── */
+.app-wrapper {
+  min-height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse 80% 60% at 50% -5%,rgba(123,111,255,0.1) 0%,#000 65%);
+  padding: 16px;
+}
 .phone{width:393px;height:852px;background:var(--bg);border-radius:52px;overflow:hidden;
   position:relative;display:flex;flex-direction:column;
   box-shadow:0 0 0 1px rgba(255,255,255,0.07),0 80px 180px rgba(0,0,0,0.95),inset 0 1px 0 rgba(255,255,255,0.04);}
@@ -44,6 +49,16 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .ni.active .ni-ic{background:rgba(123,111,255,0.18);}
 .ni-lb{font-size:9px;font-weight:700;color:var(--t2);letter-spacing:.4px;transition:color .2s;text-transform:uppercase;}
 .ni.active .ni-lb{color:#A89FFF;}
+
+/* ── MOBILE RESPONSIVE TWEAKS ── */
+@media (max-width: 480px) {
+  .app-wrapper { padding: 0; background: var(--bg); }
+  .phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .island, .sbar { display: none !important; }
+  .scr { padding-top: max(55px, env(safe-area-inset-top)); }
+  .bnav { padding-bottom: max(20px, env(safe-area-inset-bottom)); height: auto; padding-top: 10px; }
+  .fab { bottom: max(94px, calc(80px + env(safe-area-inset-bottom))); }
+}
 
 /* ── FAB ── */
 .fab{position:absolute;bottom:94px;right:16px;width:52px;height:52px;border-radius:17px;
@@ -1542,8 +1557,7 @@ export default function App(){
   ];
 
   return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",
-      background:"radial-gradient(ellipse 80% 60% at 50% -5%,rgba(123,111,255,0.1) 0%,#000 65%)",padding:16}}>
+    <div className="app-wrapper">
       <style>{G}</style>
       <div className="phone">
         <div className="island"/>
