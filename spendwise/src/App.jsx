@@ -349,7 +349,7 @@ function BankCardVis({a,onPress}){
 
 // ─── SCREENS ──────────────────────────────────────────────────────────────────
 
-function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab,onSignOut}){
+function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab,onSignOut,onPayBill}){
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const banks = accounts.filter(a=>a.type==="bank");
   const ccs = accounts.filter(a=>a.type==="credit");
@@ -497,15 +497,20 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           {ccs.map(cc=>{
             const p=cc.limit?cc.balance/cc.limit:0;
             return (
-              <div key={cc.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 18px",cursor:"pointer",borderRadius:14}} onClick={()=>onEditAcct(cc)}>
-                <div style={{width:44,height:44,borderRadius:14,background:cc.color+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{cc.icon}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,marginBottom:5}}>{cc.name}</div>
-                  <div className="pt"><div className="pf" style={{width:`${p*100}%`,background:p>.8?"var(--red)":p>.5?"var(--amber)":"var(--cyan)"}}/></div>
+              <div key={cc.id} style={{padding:"12px 18px"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer",borderRadius:14}} onClick={()=>onEditAcct(cc)}>
+                  <div style={{width:44,height:44,borderRadius:14,background:cc.color+"44",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{cc.icon}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:700,marginBottom:5}}>{cc.name}</div>
+                    <div className="pt"><div className="pf" style={{width:`${p*100}%`,background:p>.8?"var(--red)":p>.5?"var(--amber)":"var(--cyan)"}}/></div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:14,fontWeight:800,fontFamily:"var(--mono)",color:"var(--red)"}}>{fmt(cc.balance)}</div>
+                    <div style={{fontSize:10,color:"var(--t2)",fontFamily:"var(--mono)"}}>of {fmt(cc.limit)}</div>
+                  </div>
                 </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:14,fontWeight:800,fontFamily:"var(--mono)",color:"var(--red)"}}>{fmt(cc.balance)}</div>
-                  <div style={{fontSize:10,color:"var(--t2)",fontFamily:"var(--mono)"}}>of {fmt(cc.limit)}</div>
+                <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
+                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'#C4BEFF',border:'none',padding:'5px 12px',borderRadius:8,fontSize:10,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
                 </div>
               </div>
             );
@@ -1734,7 +1739,7 @@ export default function App(){
         </div>
 
         <div className="scr">
-          {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut}/>}
+          {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
           {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
           {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
