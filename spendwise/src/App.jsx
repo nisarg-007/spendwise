@@ -380,7 +380,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 
   const dailyBurn = currentDay > 0 ? monthExpenses / currentDay : 0;
   const projectedSpend = dailyBurn * daysInMonth;
-  const totalBudgetLimit = budgets?.reduce((s,b) => s + b.limit, 0) || 0;
+  const totalBudgetLimit = Object.values(budgets || {}).reduce((s, v) => s + v, 0);
 
   const recent = [...transactions].sort((a,b)=>b.id-a.id).slice(0,5);
 
