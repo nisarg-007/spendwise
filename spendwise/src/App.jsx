@@ -453,7 +453,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
             <div style={{fontSize:18}}>🔮</div>
             <div style={{fontSize:14,fontWeight:800,color:"var(--text)"}}>Month-End Forecast</div>
-            <span className="ftag ftag-p" style={{marginLeft:"auto"}}>AI</span>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:14}}>
             <div>
