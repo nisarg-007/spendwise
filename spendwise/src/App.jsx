@@ -737,7 +737,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 }
 
 // ─── ACCOUNTS SCREEN ──────────────────────────────────────────────────────────
-function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct}){
+function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
   const banks=accounts.filter(a=>a.type==="bank");
   const ccs=accounts.filter(a=>a.type==="credit");
   const totalAssets=banks.reduce((s,a)=>s+a.balance,0);
@@ -797,7 +797,10 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct}){
                   <div style={{textAlign:"right"}}><div style={{fontSize:9,color:"var(--t2)",marginBottom:2}}>AVAILABLE</div><div style={{fontSize:20,fontWeight:900,fontFamily:"var(--mono)",color:"var(--green)"}}>{fmt(cc.limit-cc.balance)}</div></div>
                 </div>
                 <div className="pt" style={{height:6}}><div className="pf" style={{width:`${p*100}%`,background:p>.8?"var(--red)":p>.5?"var(--amber)":"var(--cyan)"}}/></div>
-                <div style={{fontSize:10,color:"var(--t2)",marginTop:6}}>Limit {fmt(cc.limit)} · {p<.3?"✅ Great score impact":"⚠️ Keep below 30%"}</div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:6}}>
+                  <div style={{fontSize:10,color:"var(--t2)"}}>Limit {fmt(cc.limit)} · {p<.3?"✅ Great score impact":"⚠️ Keep below 30%"}</div>
+                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'#C4BEFF',border:'none',padding:'6px 14px',borderRadius:8,fontSize:11,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
+                </div>
               </div>
             </div>
           );
@@ -1312,6 +1315,69 @@ function AcctModal({account,onClose,onSave,onDelete}){
   );
 }
 
+// ─── PAY CREDIT CARD MODAL ───────────────────────────────────────────────────
+function PayCCModal({ accounts, creditCard, onClose, onPay }) {
+  const [bankId, setBankId] = useState("");
+  const [amount, setAmount] = useState(creditCard.balance.toString());
+
+  const banks = accounts.filter(a => a.type === "bank" && a.balance > 0);
+  
+  useEffect(() => {
+    if (banks.length > 0 && !bankId) setBankId(banks[0].id);
+  }, [banks, bankId]);
+
+  const handleNum=v=>{
+    if(v==="."&&amount.includes(".")) return;
+    if(v==="⌫"){setAmount(a=>a.slice(0,-1));return;}
+    if(amount.replace(".","").length>=8) return;
+    setAmount(a=>a+v);
+  };
+
+  const doPay = () => {
+    const val = parseFloat(amount);
+    if (!val || val <= 0 || !bankId) return;
+    onPay({ bankId, ccId: creditCard.id, amount: val });
+    onClose();
+  };
+
+  if (banks.length === 0) {
+    return (
+      <div className="ov" onClick={onClose}>
+        <div className="sheet" onClick={e=>e.stopPropagation()}>
+          <div className="st">No Banks Available</div>
+          <div style={{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:20}}>You do not have any bank accounts with a positive balance to pay from.</div>
+          <button className="btn-p" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="hdl"/>
+        <div className="st">Pay Credit Card</div>
+        <div style={{textAlign:'center', fontSize:14, color:'var(--t2)', marginBottom:10}}>
+          Paying {creditCard.name} (Due: ${creditCard.balance})
+        </div>
+        <div className="amtd">
+          <span style={{color:"var(--green)"}}>${amount||"0"}</span>
+        </div>
+        <div className="npad">
+          {["1","2","3","4","5","6","7","8","9",".","0","⌫"].map(k=>(
+            <button key={k} className="npb" style={{color:k==="⌫"?"var(--red)":k==="."?"var(--t2)":"var(--text)"}} onClick={()=>handleNum(k)}>{k}</button>
+          ))}
+        </div>
+        <div className="ilb">From Bank Account</div>
+        <div className="sel-row" style={{marginBottom:15}}>
+          {banks.map(a=><div key={a.id} className={`chip ${bankId===a.id?"on":""}`} onClick={()=>setBankId(a.id)}>{a.icon} {a.name}</div>)}
+        </div>
+        <button className="btn-p" onClick={doPay}>Pay ${amount||"0"} to CC</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── ADD TRANSACTION MODAL ────────────────────────────────────────────────────
 function AddTxModal({accounts,onClose,onAdd}){
   const [type,setType]=useState("expense");
@@ -1509,6 +1575,7 @@ export default function App(){
   const [tab,setTab]=useState("home");
   const [showAddTx,setShowAddTx]=useState(false);
   const [acctModal,setAcctModal]=useState(null);
+  const [payCcModal,setPayCcModal]=useState(null);
   const [time,setTime]=useState(new Date());
   const [moreSub,setMoreSub]=useState("reports");
 
@@ -1552,6 +1619,36 @@ export default function App(){
     });
   };
 
+  const handlePayCC = async ({ bankId, ccId, amount }) => {
+    // Both bank and CC get a transaction for the record
+    await addTransaction({amount, category:'other', note:'Payment to CC', type:'expense', date:new Date().toISOString().slice(0,10), accountId:bankId});
+    await addTransaction({amount, category:'other', note:'Payment from Bank', type:'income', date:new Date().toISOString().slice(0,10), accountId:ccId});
+    
+    // Decrease the balances directly
+    const bank = uiAccounts.find(a=>a.id===bankId);
+    if(bank){
+      await updateAccount(bank.id, { balance: bank.balance - amount });
+    }
+    const cc = uiAccounts.find(a=>a.id===ccId);
+    if(cc){
+      await updateAccount(cc.id, { balance: cc.balance - amount });
+    }
+  };
+
+  const handleAddTx = async (tx) => {
+    await addTransaction(tx);
+    const acct = uiAccounts.find(a => a.id === tx.accountId);
+    if (acct) {
+      let change = 0;
+      if (acct.type === "bank") {
+         change = (tx.type === "income" ? tx.amount : -tx.amount);
+      } else {
+         change = (tx.type === "income" ? -tx.amount : tx.amount);
+      }
+      await updateAccount(acct.id, { balance: acct.balance + change });
+    }
+  };
+
   // Normalise DB account row to UI shape
   const uiAccounts = accounts.map(a => ({
     ...a,
@@ -1581,7 +1678,7 @@ export default function App(){
 
         <div className="scr">
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut}/>}
-          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")}/>}
+          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
           {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
           {tab==="more"&&(
@@ -1610,8 +1707,9 @@ export default function App(){
           ))}
         </div>
 
-        {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={addTransaction}/>}
+        {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={handleAddTx}/>}
         {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={acctModal==="new"?handleAddAccount:handleUpdateAccount} onDelete={deleteAccount}/>}
+        {payCcModal&&<PayCCModal creditCard={payCcModal} accounts={uiAccounts} onClose={()=>setPayCcModal(null)} onPay={handlePayCC}/>}
       </div>
     </div>
   );
