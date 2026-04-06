@@ -56,8 +56,8 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   .phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; }
   .island, .sbar { display: none !important; }
   .scr { padding-top: max(55px, env(safe-area-inset-top)); }
-  .bnav { padding-bottom: max(20px, env(safe-area-inset-bottom)); height: auto; padding-top: 10px; }
-  .fab { bottom: max(94px, calc(80px + env(safe-area-inset-bottom))); }
+  .bnav { padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 12px)); height: auto; padding-top: 10px; }
+  .fab { bottom: max(106px, calc(92px + env(safe-area-inset-bottom))); }
 }
 
 /* ── FAB ── */
