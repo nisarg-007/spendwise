@@ -359,8 +359,8 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
   const netWorth = totalBank - totalCC;
   const ccUtil = totalCCLimit>0 ? totalCC/totalCCLimit : 0;
 
-  const income = transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-  const expense = transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+  const income = transactions.filter(t=>t.type==="income" && !(t.tags&&t.tags.includes('__transfer__'))).reduce((s,t)=>s+t.amount,0);
+  const expense = transactions.filter(t=>t.type==="expense" && !(t.tags&&t.tags.includes('__transfer__'))).reduce((s,t)=>s+t.amount,0);
   const savingsRate = income>0 ? Math.round(((income-expense)/income)*100) : 0;
 
   const taxDeductible = transactions.filter(t=>t.taxDeductible&&t.type==="expense").reduce((s,t)=>s+t.amount,0);
@@ -414,9 +414,14 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="ph-t">Dashboard</div>
         </div>
         <div style={{position:'relative'}}>
-          <div className="av" onClick={() => setShowProfileMenu(!showProfileMenu)} style={{cursor:'pointer'}}>N</div>
+          <div className="av" onClick={() => setShowProfileMenu(!showProfileMenu)} style={{cursor:'pointer',background:'transparent',overflow:'hidden',padding:0}}>
+            <img src="/logo.png" alt="SW" style={{width:'100%',height:'100%',borderRadius:13,objectFit:'cover'}}/>
+          </div>
           {showProfileMenu && (
-            <div style={{position:'absolute',top:48,right:0,background:'var(--s2)',border:'1px solid var(--border)',borderRadius:12,padding:8,zIndex:100,boxShadow:'0 10px 40px rgba(0,0,0,0.5)',minWidth:140}}>
+            <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:999}} onClick={() => setShowProfileMenu(false)}/>
+          )}
+          {showProfileMenu && (
+            <div style={{position:'absolute',top:48,right:0,background:'var(--s2)',border:'1px solid var(--border)',borderRadius:12,padding:8,zIndex:1000,boxShadow:'0 10px 40px rgba(0,0,0,0.8)',minWidth:140}}>
               <button 
                 onClick={onSignOut} 
                 style={{width:'100%',padding:'10px 12px',background:'rgba(244,63,94,0.1)',border:'none',borderRadius:8,color:'var(--red)',fontFamily:'var(--font)',fontSize:13,fontWeight:700,cursor:'pointer',textAlign:'left'}}
@@ -773,7 +778,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
                   <div className="txno">{tx.note}</div>
                   <div className="txsb">
                     <span>{cat.lb}</span>
-                    {acct&&<span className="abadge">{acct.icon} {acct.name.split(" ")[0]}</span>}
+                    {acct&&<span className="abadge">{acct.icon} {acct.name}</span>}
                     {tx.recurring&&<span className="recbadge">🔄 recurring</span>}
                     {tx.taxDeductible&&<span className="taxbadge">🧾 deductible</span>}
                   </div>
@@ -791,7 +796,9 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 }
 
 // ─── ACCOUNTS SCREEN ──────────────────────────────────────────────────────────
-function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
+function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill,onAddInterest}){
+  const KNOWN_HYSA = ['capital one','capitalone','ally','marcus','discover','american express','amex','synchrony','cit'];
+  const hasAPY = (a) => a.type==='bank' && KNOWN_HYSA.some(n=>(a.bank||a.name||'').toLowerCase().includes(n));
   const banks=accounts.filter(a=>a.type==="bank");
   const ccs=accounts.filter(a=>a.type==="credit");
   const totalAssets=banks.reduce((s,a)=>s+a.balance,0);
@@ -811,9 +818,13 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
         <div className="sh"><div className="sh-t">🏦 Bank Accounts ({banks.length})</div></div>
         {banks.map(a=>{
           const lastTx=[...transactions].filter(t=>t.accountId===a.id).sort((x,y)=>y.id-x.id)[0];
+          const eligible = hasAPY(a);
+          const bankKey = Object.entries({'capital one':3.20,'capitalone':3.20,'ally':4.30,'marcus':4.20,'discover':4.10,'american express':4.20,'amex':4.20,'synchrony':4.50,'cit':4.50})
+            .find(([n]) => (a.bank||a.name||'').toLowerCase().includes(n));
+          const apyPct = bankKey ? bankKey[1] : null;
           return (
-            <div key={a.id} onClick={()=>onEditAcct(a)} style={{margin:"0 18px 10px",borderRadius:18,overflow:"hidden",cursor:"pointer"}}>
-              <div style={{background:BANK_THEMES[a.themeIdx||0],padding:"16px 18px",position:"relative"}}>
+            <div key={a.id} style={{margin:"0 18px 10px",borderRadius:18,overflow:'visible',cursor:"pointer"}}>
+              <div onClick={()=>onEditAcct(a)} style={{background:BANK_THEMES[a.themeIdx||0],padding:"16px 18px",position:"relative",borderRadius:18}}>
                 <div style={{position:"absolute",right:-20,top:-20,width:110,height:110,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
@@ -821,7 +832,14 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
                     <div style={{fontSize:14,fontWeight:700,color:"#fff",marginBottom:8}}>{a.name}</div>
                     <div style={{fontSize:26,fontWeight:900,letterSpacing:-1,fontFamily:"var(--mono)",color:"#fff"}}>{fmt(a.balance)}</div>
                   </div>
-                  <div style={{fontSize:26}}>{a.icon}</div>
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}}>
+                    <div style={{fontSize:26}}>{a.icon}</div>
+                    {eligible && (
+                      <button onClick={(e)=>{e.stopPropagation();onAddInterest(a);}} style={{background:'rgba(16,185,129,0.25)',border:'1px solid rgba(16,185,129,0.4)',color:'#10B981',padding:'4px 10px',borderRadius:8,fontSize:10,fontWeight:800,cursor:'pointer',whiteSpace:'nowrap'}}>
+                        + Interest {apyPct ? `(${apyPct}%)` : ''}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {lastTx&&<div style={{marginTop:10,fontSize:10,color:"rgba(255,255,255,0.4)"}}>Last: {lastTx.type==="income"?"+":"-"}{fmt(lastTx.amount)} · {lastTx.note}</div>}
               </div>
@@ -865,7 +883,7 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
 }
 
 // ─── TRANSACTIONS SCREEN ──────────────────────────────────────────────────────
-function TxScreen({transactions,accounts}){
+function TxScreen({transactions,accounts,onEditTx}){
   const [fType,setFType]=useState("all");
   const [fAcct,setFAcct]=useState("all");
   const [fCat,setFCat]=useState("all");
@@ -911,7 +929,7 @@ function TxScreen({transactions,accounts}){
       <div className="au d2 sel-row" style={{padding:"0 18px 10px"}}>
         <div className={`chip ${fAcct==="all"?"on":""}`} onClick={()=>setFAcct("all")}>All Accts</div>
         {accounts.map(a=>(
-          <div key={a.id} className={`chip ${fAcct===a.id?"on":""}`} onClick={()=>setFAcct(a.id)}>{a.icon} {a.name.split(" ")[0]}</div>
+          <div key={a.id} className={`chip ${fAcct===a.id?"on":""}`} onClick={()=>setFAcct(a.id)}>{a.icon} {a.name}</div>
         ))}
       </div>
 
@@ -932,13 +950,13 @@ function TxScreen({transactions,accounts}){
                 const cat=CATS.find(c=>c.id===tx.category)||CATS[CATS.length-1];
                 const acct=accounts.find(a=>a.id===tx.accountId);
                 return (
-                  <div key={tx.id} className="txr" style={{margin:"0 8px"}}>
+                  <div key={tx.id} className="txr" style={{margin:"0 8px",cursor:'pointer'}} onClick={() => onEditTx && onEditTx(tx)}>
                     <div className="txic" style={{background:cat.col+"22"}}>{cat.ic}</div>
                     <div className="txin">
                       <div className="txno">{tx.note}</div>
                       <div className="txsb">
                         <span>{cat.lb}</span>
-                        {acct&&<span className="abadge">{acct.icon} {acct.name.split(" ")[0]}</span>}
+                        {acct&&<span className="abadge">{acct.icon} {acct.name}</span>}
                         {tx.recurring&&<span className="recbadge">🔄</span>}
                         {tx.taxDeductible&&<span className="taxbadge">🧾</span>}
                         {tx.tags&&tx.tags.map(t=><span key={t} className="abadge">#{t}</span>)}
@@ -1120,8 +1138,11 @@ function SubsScreen({subscriptions,setSubscriptions}){
 // ─── REPORTS SCREEN ───────────────────────────────────────────────────────────
 function ReportsScreen({transactions,accounts}){
   const [period,setPeriod]=useState("month");
-  const expenses=transactions.filter(t=>t.type==="expense");
-  const income=transactions.filter(t=>t.type==="income");
+  // Exclude internal transfers from all report calculations
+  const isTransfer = t => t.tags && t.tags.includes('__transfer__');
+  const realTx = transactions.filter(t => !isTransfer(t));
+  const expenses=realTx.filter(t=>t.type==="expense");
+  const income=realTx.filter(t=>t.type==="income");
   const totalExp=expenses.reduce((s,t)=>s+t.amount,0);
   const totalInc=income.reduce((s,t)=>s+t.amount,0);
   const taxDed=expenses.filter(t=>t.taxDeductible).reduce((s,t)=>s+t.amount,0);
@@ -1478,7 +1499,7 @@ function AddTxModal({accounts,onClose,onAdd}){
         </div>
         <div className="ilb">Account</div>
         <div className="sel-row">
-          {accounts.map(a=><div key={a.id} className={`chip ${accountId===a.id?"on":""}`} onClick={()=>setAccountId(a.id)}>{a.icon} {a.name.split(" ")[0]}</div>)}
+          {accounts.map(a=><div key={a.id} className={`chip ${accountId===a.id?"on":""}`} onClick={()=>setAccountId(a.id)}>{a.icon} {a.name}</div>)}
         </div>
         {type === "expense" && (
           <>
@@ -1520,12 +1541,194 @@ function AddTxModal({accounts,onClose,onAdd}){
   );
 }
 
+// ─── TRANSFER MODAL ──────────────────────────────────────────────────────────
+function TransferModal({accounts, onClose, onTransfer}) {
+  const [fromId, setFromId] = useState("");
+  const [toId, setToId] = useState("");
+  const [amount, setAmount] = useState("");
+
+  const banks = accounts.filter(a => a.type === "bank");
+
+  useEffect(() => {
+    if (banks.length >= 2) {
+      if (!fromId) setFromId(banks[0].id);
+      if (!toId) setToId(banks[1]?.id || "");
+    } else if (banks.length === 1 && !fromId) {
+      setFromId(banks[0].id);
+    }
+  }, []);
+
+  const handleNum = v => {
+    if (v === "." && amount.includes(".")) return;
+    if (v === "⌫") { setAmount(a => a.slice(0, -1)); return; }
+    if (amount.replace(".", "").length >= 8) return;
+    setAmount(a => a + v);
+  };
+
+  const doTransfer = () => {
+    const val = parseFloat(amount);
+    if (!val || val <= 0 || !fromId || !toId || fromId === toId) return;
+    const from = banks.find(b => b.id === fromId);
+    if (from && val > from.balance) return;
+    onTransfer({ fromId, toId, amount: val });
+    onClose();
+  };
+
+  if (banks.length < 2) {
+    return (
+      <div className="ov" onClick={onClose}>
+        <div className="sheet" onClick={e => e.stopPropagation()}>
+          <div className="hdl"/>
+          <div className="st">Need More Accounts</div>
+          <div style={{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:20}}>You need at least 2 bank accounts to make a transfer.</div>
+          <button className="btn-p" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  const fromAcct = banks.find(b => b.id === fromId);
+  const effectiveToId = toId === fromId ? "" : toId;
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="hdl"/>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+          <span style={{fontSize:24}}>🔄</span>
+          <div className="st" style={{marginBottom:0}}>Transfer Funds</div>
+        </div>
+        <div style={{fontSize:12,color:'var(--t2)',marginBottom:14}}>Move money between your bank accounts — no expense or income recorded.</div>
+
+        <div className="amtd">
+          <span style={{color:"var(--cyan)"}}>${amount || "0"}</span>
+        </div>
+        <div className="npad">
+          {["1","2","3","4","5","6","7","8","9",".","0","⌫"].map(k => (
+            <button key={k} className="npb" style={{color:k==="⌫"?"var(--red)":k==="."?"var(--t2)":"var(--text)"}} onClick={() => handleNum(k)}>{k}</button>
+          ))}
+        </div>
+
+        <div className="ilb">FROM ACCOUNT</div>
+        <div className="sel-row" style={{marginBottom:6}}>
+          {banks.map(a => <div key={a.id} className={`chip ${fromId===a.id?"on":""}`} onClick={() => setFromId(a.id)}>{a.icon} {a.name}</div>)}
+        </div>
+        {fromAcct && <div style={{fontSize:11,color:'var(--t2)',marginBottom:12,paddingLeft:2}}>Available: {fmt(fromAcct.balance)}</div>}
+
+        <div style={{textAlign:'center',fontSize:18,margin:'4px 0 8px',color:'var(--t2)'}}>↓</div>
+
+        <div className="ilb">TO ACCOUNT</div>
+        <div className="sel-row" style={{marginBottom:14}}>
+          {banks.filter(a => a.id !== fromId).map(a => <div key={a.id} className={`chip ${effectiveToId===a.id?"on":""}`} onClick={() => setToId(a.id)}>{a.icon} {a.name}</div>)}
+        </div>
+
+        <button className="btn-p" style={{background:'linear-gradient(135deg,#22D3EE,#0EA5E9)'}} onClick={doTransfer}>Transfer ${amount || "0"}</button>
+        <button className="btn-s" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── EDIT TRANSACTION MODAL ──────────────────────────────────────────────────
+function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
+  const [type, setType] = useState(tx.type);
+  const [amount, setAmount] = useState(String(tx.amount));
+  const [category, setCategory] = useState(tx.category);
+  const [note, setNote] = useState(tx.note || "");
+  const [accountId, setAccountId] = useState(tx.accountId || tx.account_id || "");
+  const [recurring, setRecurring] = useState(tx.recurring || false);
+  const [taxDed, setTaxDed] = useState(tx.taxDeductible || tx.tax_deductible || false);
+  const [tags, setTags] = useState((tx.tags || []).join(", "));
+  const [confirmDel, setConfirmDel] = useState(false);
+
+  const handleNum = v => {
+    if (v === "." && amount.includes(".")) return;
+    if (v === "⌫") { setAmount(a => a.slice(0, -1)); return; }
+    if (amount.replace(".", "").length >= 7) return;
+    setAmount(a => a + v);
+  };
+
+  const doSave = () => {
+    const val = parseFloat(amount);
+    if (!val || val <= 0) return;
+    const finalCategory = type === "income" ? "other" : category;
+    const finalNote = note || (type === "income" ? "Income" : (CATS.find(c => c.id === category) || {}).lb || "Other");
+    onSave(tx.id, {
+      amount: val, category: finalCategory, note: finalNote, type,
+      accountId, recurring, taxDeductible: taxDed,
+      tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+    });
+    onClose();
+  };
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()}>
+        <div className="hdl"/>
+        <div className="st">Edit Transaction</div>
+        <div className="ttog">
+          <button className={`tbtn ${type==="expense"?"ae":""}`} onClick={() => setType("expense")}>▼ Expense</button>
+          <button className={`tbtn ${type==="income"?"ai":""}`} onClick={() => setType("income")}>▲ Income</button>
+        </div>
+        <div className="amtd">
+          <span style={{color:type==="income"?"var(--green)":"var(--text)"}}>${amount || "0"}</span>
+        </div>
+        <div className="npad">
+          {["1","2","3","4","5","6","7","8","9",".","0","⌫"].map(k => (
+            <button key={k} className="npb" style={{color:k==="⌫"?"var(--red)":k==="."?"var(--t2)":"var(--text)"}} onClick={() => handleNum(k)}>{k}</button>
+          ))}
+        </div>
+        <div className="ilb">Account</div>
+        <div className="sel-row">
+          {accounts.map(a => <div key={a.id} className={`chip ${accountId===a.id?"on":""}`} onClick={() => setAccountId(a.id)}>{a.icon} {a.name}</div>)}
+        </div>
+        {type === "expense" && (
+          <>
+            <div className="ilb">Category</div>
+            <div className="cgrid">
+              {CATS.map(c => (
+                <div key={c.id} className={`cbtn ${category===c.id?"on":""}`} onClick={() => setCategory(c.id)}>
+                  <span style={{fontSize:18}}>{c.ic}</span>
+                  <span className="cbtn-lb">{c.lb}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <input className="inp" placeholder="Note..." value={note} onChange={e => setNote(e.target.value)}/>
+        <input className="inp" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)}/>
+        {type === "expense" && (
+          <div style={{display:"flex",gap:12,marginBottom:14}}>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
+              <div><div style={{fontSize:12,fontWeight:700}}>🔄 Recurring</div><div style={{fontSize:10,color:"var(--t2)"}}>Monthly auto</div></div>
+              <Toggle on={recurring} onToggle={() => setRecurring(!recurring)}/>
+            </div>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
+              <div><div style={{fontSize:12,fontWeight:700}}>🧾 Tax</div><div style={{fontSize:10,color:"var(--t2)"}}>Deductible</div></div>
+              <Toggle on={taxDed} onToggle={() => setTaxDed(!taxDed)}/>
+            </div>
+          </div>
+        )}
+        <button className="btn-p" onClick={doSave}>Save Changes</button>
+        {!confirmDel ? (
+          <button className="btn-del" onClick={() => setConfirmDel(true)}>Delete Transaction</button>
+        ) : (
+          <button className="btn-del" style={{background:'rgba(244,63,94,0.25)',fontWeight:900}} onClick={() => {onDelete(tx);onClose();}}>⚠ Confirm Delete — Cannot Undo</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // AUTH SCREEN  (shown when user is not logged in)
 // ─────────────────────────────────────────────────────────────
 const AUTH_STYLE = `
   .auth-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:32px 28px;}
-  .auth-logo{font-size:48px;margin-bottom:8px;}
+  .auth-logo-wrap{position:relative;margin-bottom:12px;}
+  .auth-logo-img{width:80px;height:80px;border-radius:22px;display:block;box-shadow:0 0 40px rgba(123,111,255,0.5),0 0 80px rgba(34,211,238,0.2);}
+  .auth-logo-ring{position:absolute;inset:-6px;border-radius:28px;border:1.5px solid rgba(123,111,255,0.3);animation:logoRing 2s ease-in-out infinite;}
+  @keyframes logoRing{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.8;transform:scale(1.04);}}
   .auth-title{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;}
   .auth-sub{font-size:13px;color:var(--t2);margin-bottom:36px;text-align:center;}
   .auth-card{width:100%;background:var(--s1);border:1px solid var(--border2);border-radius:24px;padding:24px;}
@@ -1567,7 +1770,10 @@ function AuthScreen({ onSignIn, onSignUp }) {
   return (
     <div className="auth-wrap">
       <style>{AUTH_STYLE}</style>
-      <div className="auth-logo">💸</div>
+      <div className="auth-logo-wrap">
+        <img src="/logo.png" alt="SpendWise" className="auth-logo-img"/>
+        <div className="auth-logo-ring"/>
+      </div>
       <div className="auth-title">SpendWise</div>
       <div className="auth-sub">Your personal finance command center</div>
 
@@ -1607,12 +1813,23 @@ function AuthScreen({ onSignIn, onSignUp }) {
 // ─────────────────────────────────────────────────────────────
 function LoadingScreen() {
   return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:16}}>
-      <div style={{fontSize:40}}>💸</div>
-      <div style={{fontSize:14,color:'var(--t2)',fontWeight:600}}>Loading your finances...</div>
-      <div style={{width:48,height:4,borderRadius:100,background:'var(--s3)',overflow:'hidden'}}>
-        <div style={{width:'60%',height:'100%',background:'var(--indigo)',borderRadius:100,animation:'pulse 1s ease infinite'}}/>
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:20}}>
+      <div style={{position:'relative'}}>
+        <div style={{position:'absolute',inset:-12,borderRadius:36,background:'radial-gradient(circle,rgba(123,111,255,0.25) 0%,transparent 70%)',animation:'logoGlow 2s ease-in-out infinite'}}/>
+        <img src="/logo.png" alt="SpendWise" style={{width:80,height:80,borderRadius:22,display:'block',boxShadow:'0 0 40px rgba(123,111,255,0.4)',animation:'logoPulse 2s ease-in-out infinite'}}/>
       </div>
+      <div>
+        <div style={{fontSize:22,fontWeight:900,letterSpacing:-0.8,textAlign:'center',marginBottom:4}}>SpendWise</div>
+        <div style={{fontSize:13,color:'var(--t2)',fontWeight:500,textAlign:'center'}}>Loading your finances...</div>
+      </div>
+      <div style={{width:120,height:3,borderRadius:100,background:'var(--s3)',overflow:'hidden'}}>
+        <div style={{height:'100%',background:'linear-gradient(90deg,var(--indigo),var(--cyan))',borderRadius:100,animation:'loadBar 1.6s ease-in-out infinite'}}/>
+      </div>
+      <style>{`
+        @keyframes logoGlow{0%,100%{opacity:0.5;transform:scale(1);}50%{opacity:1;transform:scale(1.08);}}
+        @keyframes logoPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+        @keyframes loadBar{0%{width:0%;margin-left:0;}50%{width:80%;margin-left:0;}100%{width:0%;margin-left:100%;}}
+      `}</style>
     </div>
   );
 }
@@ -1624,7 +1841,7 @@ export default function App(){
   const { user, loading: authLoading, signOut } = useAuth();
   const uid = user?.id;
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
-  const { transactions, addTransaction, deleteTransaction }     = useTransactions(uid);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions(uid);
   const { budgets, setBudget }                                  = useBudgets(uid);
   const { savings, addGoal, updateGoal, deleteGoal }            = useSavingsGoals(uid);
   const { subscriptions, addSubscription, deleteSubscription }  = useSubscriptions(uid);
@@ -1639,6 +1856,9 @@ export default function App(){
   const [payCcModal,setPayCcModal]=useState(null);
   const [time,setTime]=useState(new Date());
   const [moreSub,setMoreSub]=useState("reports");
+  const [showFabMenu,setShowFabMenu]=useState(false);
+  const [transferModal,setTransferModal]=useState(false);
+  const [editTxModal,setEditTxModal]=useState(null);
 
   useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
 
@@ -1710,6 +1930,70 @@ export default function App(){
     }
   };
 
+  const handleTransfer = async ({ fromId, toId, amount }) => {
+    const from = uiAccounts.find(a => a.id === fromId);
+    const to = uiAccounts.find(a => a.id === toId);
+    const today = new Date().toISOString().slice(0,10);
+    const toName = to?.name || 'account';
+    const fromName = from?.name || 'account';
+    // Log tagged transactions so they are excluded from Reports & stats
+    await addTransaction({amount, category:'other', note:`Transfer → ${toName}`, type:'expense', date:today, accountId:fromId, tags:['__transfer__']});
+    await addTransaction({amount, category:'other', note:`Transfer ← ${fromName}`, type:'income', date:today, accountId:toId, tags:['__transfer__']});
+    if (from) await updateAccount(from.id, { balance: from.balance - amount });
+    if (to) await updateAccount(to.id, { balance: to.balance + amount });
+  };
+
+  // ── MONTHLY INTEREST ──
+  // Capital One 360 Performance Savings: 3.20% APY (as of Apr 2026)
+  // Generic HYSA default: 4.50% APY
+  const BANK_RATES = {
+    'capital one': 0.0320,
+    'capitalone':  0.0320,
+    'ally':        0.0430,
+    'marcus':      0.0420,
+    'discover':    0.0410,
+    'american express': 0.0420,
+    'amex':        0.0420,
+    'synchrony':   0.0450,
+    'cit':         0.0450,
+  };
+  const getAPY = (bankName) => {
+    if (!bankName) return null;
+    const key = bankName.toLowerCase();
+    for (const [name, rate] of Object.entries(BANK_RATES)) {
+      if (key.includes(name)) return rate;
+    }
+    return null; // only apply to known HYSA banks
+  };
+  const handleAddInterest = async (acct) => {
+    const apy = getAPY(acct.bank || acct.name);
+    if (!apy || acct.type !== 'bank') return;
+    const monthlyRate = apy / 12;
+    const interest = parseFloat((acct.balance * monthlyRate).toFixed(2));
+    if (interest <= 0) return;
+    const today = new Date().toISOString().slice(0,10);
+    await addTransaction({amount: interest, category:'other', note:`Monthly Interest (${(apy*100).toFixed(2)}% APY)`, type:'income', date:today, accountId:acct.id, tags:['interest']});
+    await updateAccount(acct.id, { balance: acct.balance + interest });
+  };
+
+  const handleEditTx = async (txId, changes) => {
+    await updateTransaction(txId, changes);
+  };
+
+  const handleDeleteTx = async (tx) => {
+    const acct = uiAccounts.find(a => a.id === (tx.accountId || tx.account_id));
+    if (acct) {
+      let reversal = 0;
+      if (acct.type === "bank") {
+        reversal = tx.type === "income" ? -tx.amount : tx.amount;
+      } else {
+        reversal = tx.type === "income" ? tx.amount : -tx.amount;
+      }
+      await updateAccount(acct.id, { balance: acct.balance + reversal });
+    }
+    await deleteTransaction(tx.id);
+  };
+
   // Normalise DB account row to UI shape
   const uiAccounts = accounts.map(a => ({
     ...a,
@@ -1739,8 +2023,8 @@ export default function App(){
 
         <div className="scr">
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
-          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
-          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts}/>}
+          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal} onAddInterest={handleAddInterest}/>}
+          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
           {tab==="more"&&(
             <div>
@@ -1757,11 +2041,25 @@ export default function App(){
           )}
         </div>
 
-        <div className="fab" onClick={()=>setShowAddTx(true)}>＋</div>
+        {showFabMenu && <div style={{position:'absolute',inset:0,zIndex:49}} onClick={() => setShowFabMenu(false)}/>}
+        {showFabMenu && (
+          <div style={{position:'absolute',bottom:152,right:16,zIndex:55,background:'var(--s1)',border:'1px solid var(--border2)',borderRadius:20,padding:8,boxShadow:'0 12px 40px rgba(0,0,0,0.7)',minWidth:190,animation:'slideUp .25s cubic-bezier(0.34,1.56,0.64,1)'}}>
+            <div onClick={() => {setShowAddTx(true);setShowFabMenu(false);}} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,cursor:'pointer'}}>
+              <span style={{fontSize:18}}>💰</span>
+              <div><div style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>Add Transaction</div><div style={{fontSize:10,color:'var(--t2)'}}>Income or expense</div></div>
+            </div>
+            <div style={{height:1,background:'var(--border)',margin:'0 8px'}}/>
+            <div onClick={() => {setTransferModal(true);setShowFabMenu(false);}} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,cursor:'pointer'}}>
+              <span style={{fontSize:18}}>🔄</span>
+              <div><div style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>Transfer Funds</div><div style={{fontSize:10,color:'var(--t2)'}}>Between bank accounts</div></div>
+            </div>
+          </div>
+        )}
+        <div className="fab" onClick={() => setShowFabMenu(!showFabMenu)} style={showFabMenu ? {background:'linear-gradient(135deg,#F43F5E,#E11D48)',transform:'rotate(45deg)'} : {}}>＋</div>
 
         <div className="bnav">
           {TABS.map(t=>(
-            <div key={t.id} className={`ni ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>
+            <div key={t.id} className={`ni ${tab===t.id?"active":""}`} onClick={()=>{setTab(t.id);setShowFabMenu(false);}}>
               <div className="ni-ic">{t.ic}</div>
               <div className="ni-lb">{t.lb}</div>
             </div>
@@ -1771,6 +2069,8 @@ export default function App(){
         {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={handleAddTx}/>}
         {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={acctModal==="new"?handleAddAccount:handleUpdateAccount} onDelete={deleteAccount}/>}
         {payCcModal&&<PayCCModal creditCard={payCcModal} accounts={uiAccounts} onClose={()=>setPayCcModal(null)} onPay={handlePayCC}/>}
+        {transferModal&&<TransferModal accounts={uiAccounts} onClose={()=>setTransferModal(false)} onTransfer={handleTransfer}/>}
+        {editTxModal&&<EditTxModal tx={editTxModal} accounts={uiAccounts} onClose={()=>setEditTxModal(null)} onSave={handleEditTx} onDelete={handleDeleteTx}/>}
       </div>
     </div>
   );

@@ -180,6 +180,29 @@ export function useTransactions(userId) {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  const updateTransaction = async (id, changes) => {
+    const row = {};
+    if (changes.amount !== undefined) row.amount = changes.amount;
+    if (changes.category !== undefined) row.category = changes.category;
+    if (changes.note !== undefined) row.note = changes.note;
+    if (changes.type !== undefined) row.type = changes.type;
+    if (changes.date !== undefined) row.date = changes.date;
+    if (changes.accountId !== undefined) row.account_id = changes.accountId;
+    if (changes.recurring !== undefined) row.recurring = changes.recurring;
+    if (changes.taxDeductible !== undefined) row.tax_deductible = changes.taxDeductible;
+    if (changes.tags !== undefined) row.tags = changes.tags;
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(row)
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    setTransactions(prev => prev.map(t => t.id === id ? data : t));
+    return normalizeTx(data);
+  };
+
   // Normalize DB snake_case → UI camelCase
   const normalizeTx = (row) => ({
     ...row,
@@ -192,6 +215,7 @@ export function useTransactions(userId) {
     transactions: transactions.map(normalizeTx),
     loading,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     refetch: fetch,
   };
