@@ -435,7 +435,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
             <div style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:999}} onClick={() => setShowProfileMenu(false)}/>
           )}
           {showProfileMenu && (
-            <div style={{position:'absolute',top:48,right:0,background:'var(--s2)',border:'1px solid var(--border)',borderRadius:12,padding:8,zIndex:1000,boxShadow:'0 10px 40px rgba(0,0,0,0.8)',minWidth:140}}>
+            <div style={{position:'fixed',top:96,right:34,background:'var(--s2)',border:'1px solid var(--border)',borderRadius:12,padding:8,zIndex:1000,boxShadow:'0 10px 40px rgba(0,0,0,0.8)',minWidth:140}}>
               <button 
                 onClick={onSignOut} 
                 style={{width:'100%',padding:'10px 12px',background:'rgba(244,63,94,0.1)',border:'none',borderRadius:8,color:'var(--red)',fontFamily:'var(--font)',fontSize:13,fontWeight:700,cursor:'pointer',textAlign:'left'}}
