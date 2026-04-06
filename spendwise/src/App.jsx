@@ -1488,6 +1488,7 @@ function AddTxModal({accounts,onClose,onAdd}){
   const [recurring,setRecurring]=useState(false);
   const [taxDed,setTaxDed]=useState(false);
   const [tags,setTags]=useState("");
+  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
   const [autoDetected,setAutoDetected]=useState(false);
 
   // Smart auto-categorization from note keywords
@@ -1529,7 +1530,7 @@ function AddTxModal({accounts,onClose,onAdd}){
     if(!val||val<=0||!accountId) return;
     const finalCategory = type === "income" ? "other" : category;
     const finalNote = note || (type === "income" ? "Income" : CATS.find(c=>c.id===category).lb);
-    onAdd({amount:val,category:finalCategory,note:finalNote,type,date:new Date().toISOString().slice(0,10),accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
+    onAdd({amount:val,category:finalCategory,note:finalNote,type,date,accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
     onClose();
   };
 
@@ -1567,7 +1568,16 @@ function AddTxModal({accounts,onClose,onAdd}){
             </div>
           </>
         )}
-        <input className="inp" placeholder="Note... (try 'Netflix' or 'Uber')" value={note} onChange={e=>setNote(e.target.value)}/>
+        <div style={{display:'flex',gap:10}}>
+          <div style={{flex:1}}>
+            <div className="ilb">Date</div>
+            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={new Date().toISOString().slice(0,10)} onChange={e=>setDate(e.target.value)}/>
+          </div>
+          <div style={{flex:2}}>
+            <div className="ilb">Note</div>
+            <input className="inp" placeholder="(try 'Netflix' or 'Uber')" value={note} onChange={e=>setNote(e.target.value)}/>
+          </div>
+        </div>
         {autoDetected && type==="expense" && (
           <div style={{fontSize:10,color:'var(--cyan)',marginTop:-8,marginBottom:8,paddingLeft:4}}>✨ Auto-detected: {(CATS.find(c=>c.id===category)||{}).lb}</div>
         )}
@@ -1695,6 +1705,7 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
   const [recurring, setRecurring] = useState(tx.recurring || false);
   const [taxDed, setTaxDed] = useState(tx.taxDeductible || tx.tax_deductible || false);
   const [tags, setTags] = useState((tx.tags || []).join(", "));
+  const [date, setDate] = useState((tx.date || new Date().toISOString()).slice(0,10));
   const [confirmDel, setConfirmDel] = useState(false);
 
   const handleNum = v => {
@@ -1710,7 +1721,7 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
     const finalCategory = type === "income" ? "other" : category;
     const finalNote = note || (type === "income" ? "Income" : (CATS.find(c => c.id === category) || {}).lb || "Other");
     onSave(tx.id, {
-      amount: val, category: finalCategory, note: finalNote, type,
+      amount: val, category: finalCategory, note: finalNote, type, date,
       accountId, recurring, taxDeductible: taxDed,
       tags: tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [],
     });
@@ -1751,8 +1762,18 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
             </div>
           </>
         )}
-        <input className="inp" placeholder="Note..." value={note} onChange={e => setNote(e.target.value)}/>
-        <input className="inp" placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)}/>
+        <div style={{display:'flex',gap:10}}>
+          <div style={{flex:1}}>
+            <div className="ilb">Date</div>
+            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={new Date().toISOString().slice(0,10)} onChange={e=>setDate(e.target.value)}/>
+          </div>
+          <div style={{flex:2}}>
+            <div className="ilb">Note</div>
+            <input className="inp" placeholder="Note..." value={note} onChange={e=>setNote(e.target.value)}/>
+          </div>
+        </div>
+        <div className="ilb">Tags</div>
+        <input className="inp" placeholder="comma separated" value={tags} onChange={e => setTags(e.target.value)}/>
         {type === "expense" && (
           <div style={{display:"flex",gap:12,marginBottom:14}}>
             <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--s2)",borderRadius:12,padding:"10px 14px"}}>
