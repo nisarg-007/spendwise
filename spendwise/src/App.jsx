@@ -384,10 +384,15 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 
   const recent = [...transactions].sort((a,b)=>b.id-a.id).slice(0,5);
 
-  // weekly spend last 7 days mock
-  const weekBars = [480,720,380,950,560,810,expense>0?Math.min(expense/7,1100):620];
-  const wMax = Math.max(...weekBars);
-  const days=["M","T","W","T","F","S","S"];
+  // Real weekly spend — last 7 days from actual transactions
+  const today = new Date();
+  const weekBars = Array.from({length:7},(_,i)=>{
+    const d = new Date(today); d.setDate(d.getDate() - (6-i));
+    const dStr = d.toISOString().slice(0,10);
+    return transactions.filter(t=>t.type==="expense" && !(t.tags&&t.tags.includes('__transfer__')) && t.date===dStr).reduce((s,t)=>s+t.amount,0);
+  });
+  const wMax = Math.max(...weekBars,1);
+  const days = Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(d.getDate()-(6-i));return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()][0];});
 
   // Upcoming bills (next 7 days)
   const upcomingBills = subscriptions.filter(s=>{
@@ -396,13 +401,22 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
     return diff>=0 && diff<=7;
   });
 
-  // 30-day cash flow mock
-  const cashFlow = Array.from({length:8},(_,i)=>({
-    label:["W1","W2","W3","W4","W5","W6","W7","W8"][i],
-    inc:[800,1200,600,3200,400,900,0,3200][i],
-    exp:[450,680,320,890,510,740,0,expense/4][i]
-  }));
-  const cfMax = Math.max(...cashFlow.flatMap(d=>[d.inc,d.exp]));
+  // Real 8-week cash flow from transactions
+  const cashFlow = Array.from({length:8},(_,i)=>{
+    const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate() - (7-i)*7 + 7);
+    const weekStart = new Date(weekEnd); weekStart.setDate(weekStart.getDate() - 7);
+    const wkTx = transactions.filter(t => {
+      if (t.tags && t.tags.includes('__transfer__')) return false;
+      const d = new Date(t.date);
+      return d >= weekStart && d < weekEnd;
+    });
+    return {
+      label: `W${i+1}`,
+      inc: wkTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0),
+      exp: wkTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0),
+    };
+  });
+  const cfMax = Math.max(...cashFlow.flatMap(d=>[d.inc,d.exp]),1);
 
   const w = widgets;
 
@@ -543,7 +557,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
       {w.monthly_ring && (
         <div className="au d3" style={{margin:"0 18px 14px"}}>
           <div className="card">
-            <div style={{fontSize:14,fontWeight:800,marginBottom:14}}>March 2025</div>
+            <div style={{fontSize:14,fontWeight:800,marginBottom:14}}>{new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}</div>
             <div style={{display:"flex",alignItems:"center",gap:18}}>
               <Ring pct={expense/(income||1)} color={expense>income?"var(--red)":"var(--indigo)"} size={100} stroke={9}>
                 <div style={{fontSize:15,fontWeight:900,fontFamily:"var(--mono)"}}>{Math.round((expense/(income||1))*100)}%</div>
@@ -1157,11 +1171,22 @@ function ReportsScreen({transactions,accounts}){
   const slices=byCategory.map(c=>{const a=c.pct*360,s=cum;cum+=a;return{...c,start:s,angle:a};});
   const conic=slices.length>0?slices.map(s=>`${s.col} ${s.start}deg ${s.start+s.angle}deg`).join(","):"var(--s3) 0deg 360deg";
 
-  // Monthly bars
-  const months=["Oct","Nov","Dec","Jan","Feb","Mar"];
-  const mSpend=[1820,2340,1960,2800,2100,totalExp];
-  const mInc=[3200,3800,3200,4200,3200,totalInc];
-  const mMax=Math.max(...mSpend,...mInc);
+  // Real 6-month chart from transactions
+  const realMonths = Array.from({length:6},(_,i)=>{
+    const d = new Date(); d.setMonth(d.getMonth() - (5-i));
+    const m = d.getMonth(), y = d.getFullYear();
+    const mTx = transactions.filter(t => {
+      if (t.tags && t.tags.includes('__transfer__')) return false;
+      const td = new Date(t.date);
+      return td.getMonth()===m && td.getFullYear()===y;
+    });
+    return {
+      label: d.toLocaleString('en-US',{month:'short'}),
+      spend: mTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),
+      inc: mTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),
+    };
+  });
+  const mMax = Math.max(...realMonths.flatMap(m=>[m.spend,m.inc]),1);
 
   return (
     <div style={{paddingBottom:20}}>
@@ -1224,13 +1249,13 @@ function ReportsScreen({transactions,accounts}){
         <div className="card">
           <div style={{fontSize:13,fontWeight:800,marginBottom:14}}>6-Month Overview</div>
           <div style={{display:"flex",alignItems:"flex-end",gap:5,height:90,marginBottom:8}}>
-            {months.map((m,i)=>(
-              <div key={m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            {realMonths.map((m,i)=>(
+              <div key={m.label+i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
                 <div style={{width:"100%",display:"flex",gap:2,alignItems:"flex-end"}}>
-                  <div style={{flex:1,height:`${(mInc[i]/mMax)*76}px`,borderRadius:"3px 3px 0 0",background:"rgba(16,185,129,0.3)",minHeight:2}}/>
-                  <div style={{flex:1,height:`${(mSpend[i]/mMax)*76}px`,borderRadius:"3px 3px 0 0",background:i===5?"rgba(244,63,94,0.7)":"rgba(244,63,94,0.28)",minHeight:2}}/>
+                  <div style={{flex:1,height:`${(m.inc/mMax)*76}px`,borderRadius:"3px 3px 0 0",background:"rgba(16,185,129,0.3)",minHeight:2}}/>
+                  <div style={{flex:1,height:`${(m.spend/mMax)*76}px`,borderRadius:"3px 3px 0 0",background:i===5?"rgba(244,63,94,0.7)":"rgba(244,63,94,0.28)",minHeight:2}}/>
                 </div>
-                <div style={{fontSize:8,color:"var(--t2)",fontWeight:600}}>{m}</div>
+                <div style={{fontSize:8,color:"var(--t2)",fontWeight:600}}>{m.label}</div>
               </div>
             ))}
           </div>
@@ -1396,7 +1421,7 @@ function PayCCModal({ accounts, creditCard, onClose, onPay }) {
   const [amount, setAmount] = useState(creditCard.balance.toString());
 
   const banks = accounts.filter(a => a.type === "bank" && a.balance > 0);
-  
+
   useEffect(() => {
     if (banks.length > 0 && !bankId) setBankId(banks[0].id);
   }, [banks, bankId]);
@@ -1463,6 +1488,34 @@ function AddTxModal({accounts,onClose,onAdd}){
   const [recurring,setRecurring]=useState(false);
   const [taxDed,setTaxDed]=useState(false);
   const [tags,setTags]=useState("");
+  const [autoDetected,setAutoDetected]=useState(false);
+
+  // Smart auto-categorization from note keywords
+  const AUTO_CAT = {
+    food:['food','lunch','dinner','breakfast','grocery','grub','mcdonald','chick-fil','chipotle','starbucks','coffee','restaurant','pizza','taco','burger','sushi','wendy','popeye','whataburger','panera','subway','domino','wingstop'],
+    transport:['uber','lyft','gas','fuel','shell','chevron','exxon','parking','toll','metro','transit','bus','train','car wash','mechanic'],
+    shopping:['amazon','walmart','target','costco','ikea','best buy','apple store','nike','clothes','shoes','fashion','mall'],
+    entertainment:['netflix','hulu','disney','spotify','youtube','movie','concert','gaming','playstation','xbox','steam','twitch','theater','amc'],
+    bills:['electric','water','internet','phone','att','verizon','t-mobile','utility','cable','wifi','cellular'],
+    housing:['rent','mortgage','hoa','property tax','home','apartment','lease','maintenance','plumb','hvac','repair'],
+    health:['doctor','hospital','pharmacy','cvs','walgreen','medicine','dental','gym','fitness','health','medical','insurance','clinic'],
+    education:['tuition','school','college','university','course','udemy','book','textbook','coursera'],
+    travel:['hotel','airbnb','flight','airline','airport','delta','united','southwest','vacation','luggage','travel','trip','resort'],
+    fuel:['gas station','shell','chevron','exxon','bp','citgo','valero','marathon','sunoco','quiktrip','buc-ee','gasoline','diesel'],
+    subscriptions:['subscription','membership','premium','annual','monthly fee','patreon','adobe','microsoft 365','icloud','dropbox'],
+  };
+  useEffect(()=>{
+    if (!note || type === 'income') return;
+    const lower = note.toLowerCase();
+    for (const [cat, keywords] of Object.entries(AUTO_CAT)) {
+      if (keywords.some(k => lower.includes(k))) {
+        setCategory(cat);
+        setAutoDetected(true);
+        return;
+      }
+    }
+    setAutoDetected(false);
+  },[note, type]);
 
   const handleNum=v=>{
     if(v==="."&&amount.includes(".")) return;
@@ -1514,7 +1567,10 @@ function AddTxModal({accounts,onClose,onAdd}){
             </div>
           </>
         )}
-        <input className="inp" placeholder="Note..." value={note} onChange={e=>setNote(e.target.value)}/>
+        <input className="inp" placeholder="Note... (try 'Netflix' or 'Uber')" value={note} onChange={e=>setNote(e.target.value)}/>
+        {autoDetected && type==="expense" && (
+          <div style={{fontSize:10,color:'var(--cyan)',marginTop:-8,marginBottom:8,paddingLeft:4}}>✨ Auto-detected: {(CATS.find(c=>c.id===category)||{}).lb}</div>
+        )}
         <input className="inp" placeholder="Tags (comma separated): work, travel..." value={tags} onChange={e=>setTags(e.target.value)}/>
 
         {type === "expense" && (
