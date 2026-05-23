@@ -83,26 +83,7 @@ export function useAccounts(userId) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading]   = useState(true);
 
-  const zeroAccountBalances = async (rows) => {
-    const ids = rows
-      .filter(a => a && a.id && Number(a.balance) !== 0 && !Number.isNaN(Number(a.balance)))
-      .map(a => a.id);
-    if (ids.length === 0) return rows;
 
-    const { data: updated, error: updateError } = await supabase
-      .from('accounts')
-      .update({ balance: 0 })
-      .eq('user_id', userId)
-      .in('id', ids)
-      .select();
-
-    if (updateError) {
-      console.error('Error zeroing account balances:', updateError);
-      return rows;
-    }
-
-    return rows.map(a => ids.includes(a.id) ? { ...a, balance: 0 } : a);
-  };
 
   const fetch = useCallback(async () => {
     if (!userId) return;
@@ -135,8 +116,7 @@ export function useAccounts(userId) {
       return;
     }
 
-    const zeroed = await zeroAccountBalances(data || []);
-    setAccounts(zeroed);
+    setAccounts(data || []);
     setLoading(false);
   }, [userId]);
 
