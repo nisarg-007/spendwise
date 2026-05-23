@@ -6,6 +6,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 
+const SAMPLE_ACCOUNTS = [
+  { type:'bank', name:'Chase Checking', bank:'Chase', balance:0, theme_idx:0, last4:'4521', icon:'🏦' },
+  { type:'bank', name:'Wells Savings', bank:'Wells Fargo', balance:0, theme_idx:3, last4:'8834', icon:'💰' },
+  { type:'bank', name:'Discover Checking', bank:'Discover', balance:0, theme_idx:1, last4:'2291', icon:'🏧' },
+  { type:'bank', name:'Ally Savings', bank:'Ally Bank', balance:0, theme_idx:4, last4:'6677', icon:'💎' },
+  { type:'credit', name:'Chase Sapphire', bank:'Chase', balance:0, credit_limit:10000, color:'#0f172a', last4:'7832', icon:'💳' },
+  { type:'credit', name:'Amex Gold', bank:'Amex', balance:0, credit_limit:15000, color:'#1e1b4b', last4:'3390', icon:'⚜️' },
+];
+
 // ── AUTH HOOK ─────────────────────────────────────────────────
 export function useAuth() {
   const [user, setUser]       = useState(null);
@@ -74,6 +83,27 @@ export function useAccounts(userId) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading]   = useState(true);
 
+  const zeroAccountBalances = async (rows) => {
+    const ids = rows
+      .filter(a => a && a.id && Number(a.balance) !== 0 && !Number.isNaN(Number(a.balance)))
+      .map(a => a.id);
+    if (ids.length === 0) return rows;
+
+    const { data: updated, error: updateError } = await supabase
+      .from('accounts')
+      .update({ balance: 0 })
+      .eq('user_id', userId)
+      .in('id', ids)
+      .select();
+
+    if (updateError) {
+      console.error('Error zeroing account balances:', updateError);
+      return rows;
+    }
+
+    return rows.map(a => ids.includes(a.id) ? { ...a, balance: 0 } : a);
+  };
+
   const fetch = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
@@ -82,7 +112,31 @@ export function useAccounts(userId) {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
-    if (!error) setAccounts(data || []);
+
+    if (error) {
+      console.error('Accounts fetch error:', error);
+      setAccounts([]);
+      setLoading(false);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      const { data: seeded, error: seedError } = await supabase
+        .from('accounts')
+        .insert(SAMPLE_ACCOUNTS.map(acct => ({ ...acct, user_id: userId })))
+        .select();
+      if (!seedError) {
+        setAccounts(seeded || []);
+      } else {
+        console.error('Seed accounts error:', seedError);
+        setAccounts([]);
+      }
+      setLoading(false);
+      return;
+    }
+
+    const zeroed = await zeroAccountBalances(data || []);
+    setAccounts(zeroed);
     setLoading(false);
   }, [userId]);
 
@@ -180,6 +234,15 @@ export function useTransactions(userId) {
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
+  const clearTransactions = async () => {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('user_id', userId);
+    if (error) throw error;
+    setTransactions([]);
+  };
+
   const updateTransaction = async (id, changes) => {
     const row = {};
     if (changes.amount !== undefined) row.amount = changes.amount;
@@ -217,6 +280,7 @@ export function useTransactions(userId) {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    clearTransactions,
     refetch: fetch,
   };
 }

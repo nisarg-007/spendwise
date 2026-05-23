@@ -235,38 +235,22 @@ const CATS = [
 ];
 
 const INIT_ACCTS = [
-  {id:"ba1",type:"bank",name:"Chase Checking",bank:"Chase",balance:8420.50,themeIdx:0,last4:"4521",icon:"🏦"},
-  {id:"ba2",type:"bank",name:"Wells Savings",bank:"Wells Fargo",balance:15200.00,themeIdx:3,last4:"8834",icon:"💰"},
-  {id:"ba3",type:"bank",name:"Discover Checking",bank:"Discover",balance:3890.75,themeIdx:1,last4:"2291",icon:"🏧"},
-  {id:"ba4",type:"bank",name:"Ally Savings",bank:"Ally Bank",balance:22100.00,themeIdx:4,last4:"6677",icon:"💎"},
-  {id:"cc1",type:"credit",name:"Chase Sapphire",bank:"Chase",balance:1240.80,limit:10000,color:CC_COLORS[0],last4:"7832",icon:"💳"},
-  {id:"cc2",type:"credit",name:"Amex Gold",bank:"Amex",balance:450.25,limit:15000,color:CC_COLORS[1],last4:"3390",icon:"⚜️"},
+  {id:"ba1",type:"bank",name:"Chase Checking",bank:"Chase",balance:0,themeIdx:0,last4:"4521",icon:"🏦"},
+  {id:"ba2",type:"bank",name:"Wells Savings",bank:"Wells Fargo",balance:0,themeIdx:3,last4:"8834",icon:"💰"},
+  {id:"ba3",type:"bank",name:"Discover Checking",bank:"Discover",balance:0,themeIdx:1,last4:"2291",icon:"🏧"},
+  {id:"ba4",type:"bank",name:"Ally Savings",bank:"Ally Bank",balance:0,themeIdx:4,last4:"6677",icon:"💎"},
+  {id:"cc1",type:"credit",name:"Chase Sapphire",bank:"Chase",balance:0,limit:10000,color:CC_COLORS[0],last4:"7832",icon:"💳"},
+  {id:"cc2",type:"credit",name:"Amex Gold",bank:"Amex",balance:0,limit:15000,color:CC_COLORS[1],last4:"3390",icon:"⚜️"},
 ];
 
-const INIT_TX = [
-  {id:1,amount:42.5,category:"food",note:"Dinner at Nobu",date:"2025-03-28",type:"expense",accountId:"ba1",recurring:false,taxDeductible:false,tags:[]},
-  {id:2,amount:3200,category:"other",note:"Monthly Salary",date:"2025-03-27",type:"income",accountId:"ba1",recurring:true,taxDeductible:false,tags:["salary"]},
-  {id:3,amount:18.9,category:"transport",note:"Uber to Airport",date:"2025-03-27",type:"expense",accountId:"cc1",recurring:false,taxDeductible:true,tags:["work"]},
-  {id:4,amount:129,category:"shopping",note:"New Sneakers",date:"2025-03-26",type:"expense",accountId:"cc2",recurring:false,taxDeductible:false,tags:[]},
-  {id:5,amount:12.99,category:"entertainment",note:"Netflix",date:"2025-03-25",type:"expense",accountId:"ba2",recurring:true,taxDeductible:false,tags:["subscription"]},
-  {id:6,amount:85,category:"health",note:"Gym Monthly",date:"2025-03-25",type:"expense",accountId:"cc1",recurring:true,taxDeductible:false,tags:["subscription","health"]},
-  {id:7,amount:250,category:"bills",note:"Electricity",date:"2025-03-24",type:"expense",accountId:"ba1",recurring:true,taxDeductible:false,tags:["utility"]},
-  {id:8,amount:500,category:"other",note:"Freelance Project",date:"2025-03-23",type:"income",accountId:"ba3",recurring:false,taxDeductible:false,tags:["freelance"]},
-  {id:9,amount:34.5,category:"grocery",note:"Whole Foods",date:"2025-03-22",type:"expense",accountId:"ba2",recurring:false,taxDeductible:false,tags:[]},
-  {id:10,amount:220,category:"travel",note:"Hotel Booking",date:"2025-03-20",type:"expense",accountId:"cc2",recurring:false,taxDeductible:true,tags:["work","travel"]},
-  {id:11,amount:9.99,category:"entertainment",note:"Spotify",date:"2025-03-19",type:"expense",accountId:"ba1",recurring:true,taxDeductible:false,tags:["subscription"]},
-  {id:12,amount:65,category:"dining",note:"Sushi Dinner",date:"2025-03-18",type:"expense",accountId:"cc1",recurring:false,taxDeductible:false,tags:[]},
-  {id:13,amount:14.9,category:"fuel",note:"Shell Gas Station",date:"2025-03-17",type:"expense",accountId:"ba1",recurring:false,taxDeductible:false,tags:[]},
-  {id:14,amount:1500,category:"other",note:"Rent Transfer",date:"2025-03-16",type:"expense",accountId:"ba1",recurring:true,taxDeductible:false,tags:["housing"]},
-  {id:15,amount:49,category:"education",note:"Udemy Course",date:"2025-03-15",type:"expense",accountId:"cc1",recurring:false,taxDeductible:true,tags:["education"]},
-];
+const INIT_TX = [];
 
-const INIT_BUDGETS = {food:400,transport:200,shopping:300,health:250,entertainment:150,bills:600,travel:500,grocery:300,dining:200,fuel:100,education:100,other:200};
+const INIT_BUDGETS = {food:0,transport:0,shopping:0,health:0,entertainment:0,bills:0,travel:0,grocery:0,dining:0,fuel:0,education:0,other:0};
 
 const INIT_SAVINGS = [
-  {id:"sg1",name:"MacBook Pro",icon:"💻",target:3000,saved:1920,color:"#7B6FFF",deadline:"2025-06-01"},
-  {id:"sg2",name:"Japan Trip",icon:"🗾",target:5000,saved:2800,color:"#10B981",deadline:"2025-09-01"},
-  {id:"sg3",name:"Emergency Fund",icon:"🛡️",target:10000,saved:6500,color:"#F59E0B",deadline:"2025-12-31"},
+  {id:"sg1",name:"MacBook Pro",icon:"💻",target:0,saved:0,color:"#7B6FFF",deadline:"2025-06-01"},
+  {id:"sg2",name:"Japan Trip",icon:"🗾",target:0,saved:0,color:"#10B981",deadline:"2025-09-01"},
+  {id:"sg3",name:"Emergency Fund",icon:"🛡️",target:0,saved:0,color:"#F59E0B",deadline:"2025-12-31"},
 ];
 
 const INIT_SUBS = [
@@ -810,9 +794,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 }
 
 // ─── ACCOUNTS SCREEN ──────────────────────────────────────────────────────────
-function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill,onAddInterest}){
-  const KNOWN_HYSA = ['capital one','capitalone','ally','marcus','discover','american express','amex','synchrony','cit'];
-  const hasAPY = (a) => a.type==='bank' && KNOWN_HYSA.some(n=>(a.bank||a.name||'').toLowerCase().includes(n));
+function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
   const banks=accounts.filter(a=>a.type==="bank");
   const ccs=accounts.filter(a=>a.type==="credit");
   const totalAssets=banks.reduce((s,a)=>s+a.balance,0);
@@ -832,10 +814,6 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill,on
         <div className="sh"><div className="sh-t">🏦 Bank Accounts ({banks.length})</div></div>
         {banks.map(a=>{
           const lastTx=[...transactions].filter(t=>t.accountId===a.id).sort((x,y)=>y.id-x.id)[0];
-          const eligible = hasAPY(a);
-          const bankKey = Object.entries({'capital one':3.20,'capitalone':3.20,'ally':4.30,'marcus':4.20,'discover':4.10,'american express':4.20,'amex':4.20,'synchrony':4.50,'cit':4.50})
-            .find(([n]) => (a.bank||a.name||'').toLowerCase().includes(n));
-          const apyPct = bankKey ? bankKey[1] : null;
           return (
             <div key={a.id} style={{margin:"0 18px 10px",borderRadius:18,overflow:'visible',cursor:"pointer"}}>
               <div onClick={()=>onEditAcct(a)} style={{background:BANK_THEMES[a.themeIdx||0],padding:"16px 18px",position:"relative",borderRadius:18}}>
@@ -848,11 +826,6 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill,on
                   </div>
                   <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}}>
                     <div style={{fontSize:26}}>{a.icon}</div>
-                    {eligible && (
-                      <button onClick={(e)=>{e.stopPropagation();onAddInterest(a);}} style={{background:'rgba(16,185,129,0.25)',border:'1px solid rgba(16,185,129,0.4)',color:'#10B981',padding:'4px 10px',borderRadius:8,fontSize:10,fontWeight:800,cursor:'pointer',whiteSpace:'nowrap'}}>
-                        + Interest {apyPct ? `(${apyPct}%)` : ''}
-                      </button>
-                    )}
                   </div>
                 </div>
                 {lastTx&&<div style={{marginTop:10,fontSize:10,color:"rgba(255,255,255,0.4)"}}>Last: {lastTx.type==="income"?"+":"-"}{fmt(lastTx.amount)} · {lastTx.note}</div>}
@@ -897,7 +870,7 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill,on
 }
 
 // ─── TRANSACTIONS SCREEN ──────────────────────────────────────────────────────
-function TxScreen({transactions,accounts,onEditTx}){
+function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
   const [fType,setFType]=useState("all");
   const [fAcct,setFAcct]=useState("all");
   const [fCat,setFCat]=useState("all");
@@ -921,9 +894,10 @@ function TxScreen({transactions,accounts,onEditTx}){
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div className="ph-t">Transactions</div>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {showTax&&<span className="ftag ftag-p">TAX</span>}
           <div style={{fontSize:13,fontWeight:700,fontFamily:"var(--mono)",color:totalFiltered>=0?"var(--green)":"var(--red)"}}>{totalFiltered>=0?"+":""}{fmt(totalFiltered)}</div>
+          <button onClick={onClearHistory} style={{padding:"6px 12px",borderRadius:999,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"white",fontSize:12,cursor:"pointer"}}>Clear History</button>
         </div>
       </div>
 
@@ -1918,7 +1892,7 @@ export default function App(){
   const { user, loading: authLoading, signOut } = useAuth();
   const uid = user?.id;
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions(uid);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, clearTransactions } = useTransactions(uid);
   const { budgets, setBudget }                                  = useBudgets(uid);
   const { savings, addGoal, updateGoal, deleteGoal }            = useSavingsGoals(uid);
   const { subscriptions, addSubscription, deleteSubscription }  = useSubscriptions(uid);
@@ -2007,6 +1981,10 @@ export default function App(){
     }
   };
 
+  const handleClearHistory = async () => {
+    await clearTransactions();
+  };
+
   const handleTransfer = async ({ fromId, toId, amount }) => {
     const from = uiAccounts.find(a => a.id === fromId);
     const to = uiAccounts.find(a => a.id === toId);
@@ -2018,39 +1996,6 @@ export default function App(){
     await addTransaction({amount, category:'other', note:`Transfer ← ${fromName}`, type:'income', date:today, accountId:toId, tags:['__transfer__']});
     if (from) await updateAccount(from.id, { balance: from.balance - amount });
     if (to) await updateAccount(to.id, { balance: to.balance + amount });
-  };
-
-  // ── MONTHLY INTEREST ──
-  // Capital One 360 Performance Savings: 3.20% APY (as of Apr 2026)
-  // Generic HYSA default: 4.50% APY
-  const BANK_RATES = {
-    'capital one': 0.0320,
-    'capitalone':  0.0320,
-    'ally':        0.0430,
-    'marcus':      0.0420,
-    'discover':    0.0410,
-    'american express': 0.0420,
-    'amex':        0.0420,
-    'synchrony':   0.0450,
-    'cit':         0.0450,
-  };
-  const getAPY = (bankName) => {
-    if (!bankName) return null;
-    const key = bankName.toLowerCase();
-    for (const [name, rate] of Object.entries(BANK_RATES)) {
-      if (key.includes(name)) return rate;
-    }
-    return null; // only apply to known HYSA banks
-  };
-  const handleAddInterest = async (acct) => {
-    const apy = getAPY(acct.bank || acct.name);
-    if (!apy || acct.type !== 'bank') return;
-    const monthlyRate = apy / 12;
-    const interest = parseFloat((acct.balance * monthlyRate).toFixed(2));
-    if (interest <= 0) return;
-    const today = new Date().toISOString().slice(0,10);
-    await addTransaction({amount: interest, category:'other', note:`Monthly Interest (${(apy*100).toFixed(2)}% APY)`, type:'income', date:today, accountId:acct.id, tags:['interest']});
-    await updateAccount(acct.id, { balance: acct.balance + interest });
   };
 
   const handleEditTx = async (txId, changes) => {
@@ -2100,8 +2045,8 @@ export default function App(){
 
         <div className="scr">
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
-          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal} onAddInterest={handleAddInterest}/>}
-          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)}/>}
+          {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
+          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)} onClearHistory={handleClearHistory}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
           {tab==="more"&&(
             <div>
