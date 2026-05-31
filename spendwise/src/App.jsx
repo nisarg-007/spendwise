@@ -321,6 +321,270 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 }
 `;
 
+// ─── THEMES ──────────────────────────────────────────────────────────────────
+const THEMES = [
+  {
+    id: "nordic_sage",
+    name: "Nordic Sage",
+    desc: "Warm organic off-black & sage green",
+    bg: "#0C0F0E",
+    s1: "#151B18",
+    s2: "#0C0F0E",
+    s3: "#242F29",
+    s4: "#35443B",
+    border: "rgba(255, 255, 255, 0.05)",
+    border2: "rgba(255, 255, 255, 0.1)",
+    text: "#EAE6E1",
+    t2: "#8B958F",
+    t3: "#4A534E",
+    indigo: "#D4CEB8",
+    violet: "#A7B5A6",
+    cyan: "#A8D5BA",
+    green: "#86EFAC",
+    red: "#FCA5A5",
+    amber: "#FCD34D",
+    pink: "#FBCFE8",
+    sky: "#BAE6FD",
+    lime: "#D9F99D",
+    orange: "#FED7AA",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "swiss_grotesk",
+    name: "Swiss Grotesk",
+    desc: "Strict modular black, gray & white",
+    bg: "#09090B",
+    s1: "#18181B",
+    s2: "#09090B",
+    s3: "#27272A",
+    s4: "#3F3F46",
+    border: "rgba(255,255,255,0.06)",
+    border2: "rgba(255,255,255,0.12)",
+    text: "#FAFAFA",
+    t2: "#A1A1AA",
+    t3: "#52525B",
+    indigo: "#E4E4E7",
+    violet: "#D4D4D8",
+    cyan: "#A1A1AA",
+    green: "#10B981",
+    red: "#EF4444",
+    amber: "#F59E0B",
+    pink: "#EC4899",
+    sky: "#0EA5E9",
+    lime: "#84CC16",
+    orange: "#F97316",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "obsidian_terracotta",
+    name: "Obsidian Terracotta",
+    desc: "Matte carbon & copper rust",
+    bg: "#0A0A0A",
+    s1: "#151515",
+    s2: "#0A0A0A",
+    s3: "#262626",
+    s4: "#404040",
+    border: "rgba(225, 127, 99, 0.08)",
+    border2: "rgba(225, 127, 99, 0.16)",
+    text: "#F4EFEA",
+    t2: "#C2A398",
+    t3: "#7A635B",
+    indigo: "#E17F63",
+    violet: "#D8A393",
+    cyan: "#EBB1A0",
+    green: "#34D399",
+    red: "#F87171",
+    amber: "#FBBF24",
+    pink: "#F472B6",
+    sky: "#60A5FA",
+    lime: "#A3E635",
+    orange: "#FB923C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "brutalist_steel",
+    name: "Brutalist Steel",
+    desc: "Bold high-contrast monochrome & mono",
+    bg: "#000000",
+    s1: "#111111",
+    s2: "#000000",
+    s3: "#222222",
+    s4: "#333333",
+    border: "#D4D4D8",
+    border2: "#FFFFFF",
+    text: "#FFFFFF",
+    t2: "#D4D4D8",
+    t3: "#71717A",
+    indigo: "#FAFAFA",
+    violet: "#E4E4E7",
+    cyan: "#D4D4D8",
+    green: "#A3E635",
+    red: "#FB923C",
+    amber: "#FACC15",
+    pink: "#FB7185",
+    sky: "#38BDF8",
+    lime: "#A3E635",
+    orange: "#FB923C",
+    font: "'JetBrains Mono', monospace"
+  },
+  {
+    id: "tokyo_midnight",
+    name: "Tokyo Midnight",
+    desc: "Deep navy indigo & rich lime slate",
+    bg: "#090912",
+    s1: "#131326",
+    s2: "#090912",
+    s3: "#1F1F3D",
+    s4: "#2F2F5C",
+    border: "rgba(163, 230, 53, 0.08)",
+    border2: "rgba(163, 230, 53, 0.16)",
+    text: "#F4F4F9",
+    t2: "#7C7C9E",
+    t3: "#444466",
+    indigo: "#A3E635",
+    violet: "#C084FC",
+    cyan: "#22D3EE",
+    green: "#34D399",
+    red: "#FDA4AF",
+    amber: "#FBBF24",
+    pink: "#F472B6",
+    sky: "#38BDF8",
+    lime: "#A3E635",
+    orange: "#FB923C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "champagne_espresso",
+    name: "Champagne Luxury",
+    desc: "Rich espresso & gold private bank",
+    bg: "#0A0808",
+    s1: "#151211",
+    s2: "#0A0808",
+    s3: "#26211F",
+    s4: "#3C3431",
+    border: "rgba(212, 175, 55, 0.08)",
+    border2: "rgba(212, 175, 55, 0.18)",
+    text: "#F7F4EF",
+    t2: "#C5BBAE",
+    t3: "#5A5248",
+    indigo: "#D4AF37",
+    violet: "#D4C28A",
+    cyan: "#DECFA5",
+    green: "#86EFAC",
+    red: "#FCA5A5",
+    amber: "#FBBF24",
+    pink: "#F472B6",
+    sky: "#60A5FA",
+    lime: "#A3E635",
+    orange: "#FB923C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "cybernetic_carbon",
+    name: "Cybernetic Carbon",
+    desc: "Industrial slate & warm copper",
+    bg: "#070708",
+    s1: "#131316",
+    s2: "#070708",
+    s3: "#202026",
+    s4: "#2F2F38",
+    border: "rgba(194, 125, 56, 0.08)",
+    border2: "rgba(194, 125, 56, 0.16)",
+    text: "#E4E4E7",
+    t2: "#71717A",
+    t3: "#3F3F46",
+    indigo: "#C27D38",
+    violet: "#D4D4D8",
+    cyan: "#A1A1AA",
+    green: "#10B981",
+    red: "#EF4444",
+    amber: "#F59E0B",
+    pink: "#EC4899",
+    sky: "#0EA5E9",
+    lime: "#84CC16",
+    orange: "#F97316",
+    font: "'IBM Plex Sans', sans-serif"
+  },
+  {
+    id: "pearl_mint",
+    name: "Pearl Mint Glass",
+    desc: "Frosted glass light mode",
+    bg: "#F3F4F6",
+    s1: "rgba(255, 255, 255, 0.8)",
+    s2: "#F3F4F6",
+    s3: "rgba(255, 255, 255, 0.4)",
+    s4: "rgba(255, 255, 255, 0.6)",
+    border: "rgba(31, 41, 55, 0.06)",
+    border2: "rgba(31, 41, 55, 0.12)",
+    text: "#1F2937",
+    t2: "#4B5563",
+    t3: "#9CA3AF",
+    indigo: "#374151",
+    violet: "#4B5563",
+    cyan: "#1F2937",
+    green: "#059669",
+    red: "#D11F43",
+    amber: "#D97706",
+    pink: "#DB2777",
+    sky: "#2563EB",
+    lime: "#65A30D",
+    orange: "#EA580C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "sage_alabaster",
+    name: "Sage & Alabaster",
+    desc: "Warm earthy light mode",
+    bg: "#F5F5F0",
+    s1: "#FFFFFF",
+    s2: "#F5F5F0",
+    s3: "#EBEBE5",
+    s4: "#DFDFD6",
+    border: "rgba(85, 107, 47, 0.08)",
+    border2: "rgba(85, 107, 47, 0.16)",
+    text: "#292929",
+    t2: "#556B2F",
+    t3: "#7F8C68",
+    indigo: "#D97706",
+    violet: "#B07D62",
+    cyan: "#8A5C47",
+    green: "#065F46",
+    red: "#991B1B",
+    amber: "#D97706",
+    pink: "#BE185D",
+    sky: "#1D4ED8",
+    lime: "#4D7C0F",
+    orange: "#C2410C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  },
+  {
+    id: "sovereign_cobalt",
+    name: "Sovereign Cobalt",
+    desc: "Cobalt void & electric teal tech",
+    bg: "#040714",
+    s1: "#0B132B",
+    s2: "#040714",
+    s3: "#1C2541",
+    s4: "#3A506B",
+    border: "rgba(45, 212, 191, 0.08)",
+    border2: "rgba(45, 212, 191, 0.16)",
+    text: "#F1F5F9",
+    t2: "#94A3B8",
+    t3: "#475569",
+    indigo: "#2DD4BF",
+    violet: "#38BDF8",
+    cyan: "#818CF8",
+    green: "#34D399",
+    red: "#F43F5E",
+    amber: "#FBBF24",
+    pink: "#F472B6",
+    sky: "#38BDF8",
+    lime: "#A3E635",
+    orange: "#FB923C",
+    font: "'Plus Jakarta Sans', sans-serif"
+  }
+];
+
 // ─── DATA ────────────────────────────────────────────────────────────────────
 const BANK_THEMES = [
   "linear-gradient(135deg,#0f0c29,#302b63,#24243e)",
@@ -1482,7 +1746,7 @@ function ReportsScreen({transactions,accounts}){
 }
 
 // ─── CUSTOMIZE SCREEN ─────────────────────────────────────────────────────────
-function CustomizeScreen({widgets,onToggle}){
+function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
   const free=ALL_WIDGETS.filter(w=>w.tag==="free");
   const prem=ALL_WIDGETS.filter(w=>w.tag==="premium");
   return (
@@ -1494,9 +1758,46 @@ function CustomizeScreen({widgets,onToggle}){
         </div>
         <span style={{fontSize:22}}>🎨</span>
       </div>
-      <div className="au d1" style={{margin:"0 18px 16px",background:"linear-gradient(135deg,rgba(123,111,255,0.08),rgba(34,211,238,0.04))",border:"1px solid rgba(123,111,255,0.18)",borderRadius:16,padding:"13px 15px"}}>
-        <div style={{fontSize:12,fontWeight:800,color:"#C4BEFF",marginBottom:4}}>✨ Customize your Dashboard</div>
-        <div style={{fontSize:11,color:"var(--t2)",lineHeight:1.6}}>Toggle any widget on or off. Changes show instantly on your Home tab.</div>
+      
+      {/* Theme Picker Selection Section */}
+      <div className="sh"><div className="sh-t">🎨 Application Theme</div></div>
+      <div className="au d1" style={{margin:"0 18px 14px",background:"rgba(255,255,255,0.03)",border:"1px solid var(--border)",borderRadius:16,padding:"13px 15px"}}>
+        <div style={{fontSize:12,fontWeight:800,color:"#fff",marginBottom:4}}>Select Theme Style</div>
+        <div style={{fontSize:11,color:"var(--t2)",lineHeight:1.6}}>Switch between 10 carefully designed layouts in just 1 click.</div>
+      </div>
+      
+      <div className="au d2" style={{padding:"0 18px",display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+        {THEMES.map(t => {
+          const isSelected = t.id === currentThemeId;
+          return (
+            <div key={t.id} 
+              onClick={() => onSelectTheme(t.id)}
+              style={{
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                padding: '12px 14px', 
+                borderRadius: 16, 
+                background: isSelected ? 'rgba(255,255,255,0.06)' : 'var(--s1)', 
+                border: `1.5px solid ${isSelected ? 'var(--indigo)' : 'var(--border)'}`,
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+              }}
+            >
+              {/* Color previews */}
+              <div style={{display:'flex', gap:3, background: t.bg, padding: 6, borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)'}}>
+                <div style={{width: 10, height: 10, borderRadius: '50%', background: t.indigo}}/>
+                <div style={{width: 10, height: 10, borderRadius: '50%', background: t.green}}/>
+                <div style={{width: 10, height: 10, borderRadius: '50%', background: t.red}}/>
+              </div>
+              <div style={{flex: 1}}>
+                <div style={{fontSize: 13, fontWeight: 700, color: '#fff'}}>{t.name}</div>
+                <div style={{fontSize: 10, color: 'var(--t2)', marginTop: 2}}>{t.desc}</div>
+              </div>
+              {isSelected && <span style={{fontSize: 14, color: 'var(--green)'}}>✓</span>}
+            </div>
+          );
+        })}
       </div>
 
       <div className="sh"><div className="sh-t">Free Widgets</div><span className="ftag ftag-f">FREE</span></div>
@@ -2119,13 +2420,32 @@ export default function App(){
   const [transferModal,setTransferModal]=useState(false);
   const [editTxModal,setEditTxModal]=useState(null);
 
+  const [themeId, setThemeId] = useState(() => {
+    return localStorage.getItem('spendwise_theme') || 'swiss_grotesk';
+  });
+
+  const handleSelectTheme = (newId) => {
+    setThemeId(newId);
+    localStorage.setItem('spendwise_theme', newId);
+  };
+
   useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
+
+  const activeTheme = THEMES.find(t => t.id === themeId) || THEMES[0];
 
   // Auth loading spinner or missing user fallback
   if (authLoading || !user) {
     return (
-      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#06060F'}}>
+      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:activeTheme.bg}}>
         <style>{G}</style>
+        <style>{`
+          :root {
+            --bg: ${activeTheme.bg} !important;
+            --text: ${activeTheme.text} !important;
+            --indigo: ${activeTheme.indigo} !important;
+            --font: ${activeTheme.font || "'Plus Jakarta Sans', sans-serif"} !important;
+          }
+        `}</style>
         <LoadingScreen/>
       </div>
     );
@@ -2287,6 +2607,38 @@ export default function App(){
   return (
     <div className="app-wrapper">
       <style>{G}</style>
+      <style>{`
+        :root {
+          --bg: ${activeTheme.bg} !important;
+          --s1: ${activeTheme.s1} !important;
+          --s2: ${activeTheme.s2} !important;
+          --s3: ${activeTheme.s3} !important;
+          --s4: ${activeTheme.s4} !important;
+          --border: ${activeTheme.border} !important;
+          --border2: ${activeTheme.border2} !important;
+          --text: ${activeTheme.text} !important;
+          --t2: ${activeTheme.t2} !important;
+          --t3: ${activeTheme.t3} !important;
+          --indigo: ${activeTheme.indigo} !important;
+          --violet: ${activeTheme.violet} !important;
+          --cyan: ${activeTheme.cyan} !important;
+          --green: ${activeTheme.green} !important;
+          --red: ${activeTheme.red} !important;
+          --amber: ${activeTheme.amber} !important;
+          --pink: ${activeTheme.pink} !important;
+          --sky: ${activeTheme.sky} !important;
+          --lime: ${activeTheme.lime} !important;
+          --orange: ${activeTheme.orange} !important;
+          --font: ${activeTheme.font || "'Plus Jakarta Sans', sans-serif"} !important;
+        }
+        .app-wrapper {
+          background: ${activeTheme.bg} !important;
+        }
+        .phone {
+          background: ${activeTheme.id === "pearl_mint" ? "rgba(255, 255, 255, 0.45)" : activeTheme.id === "sage_alabaster" ? "#FFFFFF" : activeTheme.bg} !important;
+          backdrop-filter: ${activeTheme.id === "pearl_mint" ? "blur(30px)" : "none"} !important;
+        }
+      `}</style>
       <div className="phone">
         <div className="island"/>
         <div className="sbar">
@@ -2309,7 +2661,7 @@ export default function App(){
               </div>
               {moreSub==="reports"&&<ReportsScreen transactions={transactions} accounts={uiAccounts}/>}
               {moreSub==="subscriptions"&&<SubsScreen subscriptions={subscriptions} setSubscriptions={()=>{}}/>}
-              {moreSub==="customize"&&<CustomizeScreen widgets={widgets} onToggle={toggleWidget}/>}
+              {moreSub==="customize"&&<CustomizeScreen widgets={widgets} onToggle={toggleWidget} currentThemeId={themeId} onSelectTheme={handleSelectTheme}/>}
             </div>
           )}
         </div>
