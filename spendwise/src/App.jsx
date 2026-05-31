@@ -174,6 +174,9 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   z-index: 40;
   width: 100%;
   pointer-events: none;
+  background: linear-gradient(to bottom, var(--bg) 60%, transparent 100%);
+  padding-bottom: 20px;
+  margin-bottom: -20px;
 }
 .di-glow-bg {
   position: absolute;
