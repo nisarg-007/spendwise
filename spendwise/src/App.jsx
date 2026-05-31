@@ -206,6 +206,36 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 /* ── COLOR DOTS ── */
 .cdot{width:30px;height:30px;border-radius:9px;cursor:pointer;transition:all .15s;border:2px solid transparent;}
 .cdot.sel{border-color:white;}
+
+/* ── PREMIUM STATS STYLING ── */
+.glass-stat {
+  background: rgba(14, 14, 28, 0.45) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3) !important;
+}
+.glass-stat:hover {
+  transform: translateY(-3px);
+  border-color: rgba(123, 111, 255, 0.25) !important;
+  box-shadow: 0 12px 40px 0 rgba(123, 111, 255, 0.1), 0 8px 32px 0 rgba(0,0,0,0.3) !important;
+}
+.ring-stat-row {
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+.ring-stat-row:hover {
+  transform: translateX(4px);
+  background: rgba(255,255,255,0.035) !important;
+}
+.bar-container:hover .bar-value {
+  opacity: 1 !important;
+  transform: translateY(-5px) scale(1) !important;
+}
+.bar-container:hover .spend-bar {
+  transform: scaleX(1.06);
+  box-shadow: 0 0 18px rgba(123,111,255,0.4) !important;
+  background: linear-gradient(180deg, var(--cyan) 0%, var(--indigo) 100%) !important;
+}
 `;
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -522,44 +552,102 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 
       {/* QUICK STATS */}
       {w.quick_stats && (
-        <div className="au d2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 18px 14px"}}>
-          {[
-            {lb:"Savings Rate",v:`${savingsRate}%`,c:savingsRate>20?"var(--green)":"var(--amber)"},
-            {lb:"Daily Avg",v:fmtK(expense/28),c:"var(--text)"},
-            {lb:"Income",v:fmtK(income),c:"var(--green)"},
-            {lb:"Expenses",v:fmtK(expense),c:"var(--red)"},
-          ].map(s=>(
-            <div key={s.lb} className="scell">
-              <div className="slb">{s.lb}</div>
-              <div className="sval" style={{color:s.c}}>{s.v}</div>
+        <div className="au d2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,padding:"0 18px 14px"}}>
+          
+          {/* Savings Rate Card */}
+          <div className="scell glass-stat" style={{position:'relative', overflow:'hidden'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div>
+                <div className="slb">Savings Rate</div>
+                <div className="sval" style={{color: savingsRate > 20 ? "var(--green)" : "var(--amber)"}}>{savingsRate}%</div>
+              </div>
+              <div style={{width: 32, height: 32, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14}}>📈</div>
             </div>
-          ))}
+            <div className="pt" style={{height: 4, background: 'var(--s3)', marginTop: 10, borderRadius: 100}}>
+              <div className="pf" style={{width: `${Math.max(0, Math.min(savingsRate, 100))}%`, background: savingsRate > 20 ? 'linear-gradient(90deg, var(--indigo), var(--green))' : 'linear-gradient(90deg, var(--amber), var(--orange))'}}/>
+            </div>
+            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 6}}>{savingsRate > 20 ? "Target achieved! 🎯" : "Increase to hit goals"}</div>
+          </div>
+
+          {/* Daily Avg Card */}
+          <div className="scell glass-stat">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div>
+                <div className="slb">Daily Avg</div>
+                <div className="sval" style={{color: 'var(--text)'}}>{fmtK(expense/28)}</div>
+              </div>
+              <div style={{width: 32, height: 32, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14}}>⚡</div>
+            </div>
+            <div style={{display:'flex', alignItems:'center', gap: 4, marginTop: 12}}>
+              <span style={{fontSize: 9, color: 'var(--t2)'}}>Burn rate over 28 days</span>
+            </div>
+          </div>
+
+          {/* Income Card */}
+          <div className="scell glass-stat" style={{background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(6, 6, 15, 0.95) 100%)', border: '1px solid rgba(16, 185, 129, 0.15)'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div>
+                <div className="slb" style={{color: '#34d399'}}>Total Income</div>
+                <div className="sval" style={{color: 'var(--green)'}}>{fmt(income)}</div>
+              </div>
+              <div style={{width: 30, height: 30, borderRadius: 10, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--green)', fontSize: 13}}>▲</div>
+            </div>
+            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>From salary & other sources</div>
+          </div>
+
+          {/* Expenses Card */}
+          <div className="scell glass-stat" style={{background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.04) 0%, rgba(6, 6, 15, 0.95) 100%)', border: '1px solid rgba(244, 63, 94, 0.15)'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div>
+                <div className="slb" style={{color: '#f43f5e'}}>Total Expenses</div>
+                <div className="sval" style={{color: 'var(--red)'}}>{fmt(expense)}</div>
+              </div>
+              <div style={{width: 30, height: 30, borderRadius: 10, background: 'rgba(244, 63, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', fontSize: 13}}>▼</div>
+            </div>
+            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>Total outflows recorded</div>
+          </div>
+
         </div>
       )}
 
       {/* MONTHLY RING */}
       {w.monthly_ring && (
         <div className="au d3" style={{margin:"0 18px 14px"}}>
-          <div className="card">
-            <div style={{fontSize:14,fontWeight:800,marginBottom:14}}>{new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}</div>
-            <div style={{display:"flex",alignItems:"center",gap:18}}>
-              <Ring pct={expense/(income||1)} color={expense>income?"var(--red)":"var(--indigo)"} size={100} stroke={9}>
-                <div style={{fontSize:15,fontWeight:900,fontFamily:"var(--mono)"}}>{Math.round((expense/(income||1))*100)}%</div>
-                <div style={{fontSize:9,color:"var(--t2)"}}>spent</div>
-              </Ring>
+          <div className="card glass-stat" style={{position:'relative', overflow:'hidden'}}>
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:800}}>Income & Expense Flow</div>
+              <span className="pill" style={{background: 'rgba(255,255,255,0.03)', color: 'var(--t2)', fontSize: 10}}>{new Date().toLocaleString('en-US',{month:'long',year:'numeric'})}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:24}}>
+              <div style={{position:'relative', display:'flex', justifyContent:'center', alignItems:'center'}}>
+                <Ring pct={expense/(income||1)} color={expense>income?"var(--red)":"var(--indigo)"} size={106} stroke={9}>
+                  <div style={{fontSize:16,fontWeight:900,fontFamily:"var(--mono)"}}>{Math.round((expense/(income||1))*100)}%</div>
+                  <div style={{fontSize:8,color:"var(--t2)",textTransform:'uppercase',letterSpacing:0.5,marginTop:1}}>spent</div>
+                </Ring>
+                <div style={{position:'absolute', width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle, rgba(123,111,255,0.06) 0%, transparent 70%)', pointerEvents:'none'}}/>
+              </div>
               <div style={{flex:1}}>
                 {[
-                  {lb:"Income",v:income,c:"var(--green)",ic:"▲"},
-                  {lb:"Expense",v:expense,c:"var(--red)",ic:"▼"},
-                  {lb:"Saved",v:Math.max(0,income-expense),c:"var(--cyan)",ic:"●"},
-                  {lb:"Deductible",v:taxDeductible,c:"var(--violet)",ic:"🧾"},
+                  {lb:"Income",v:income,c:"var(--green)",ic:"▲",bg:"rgba(16,185,129,0.08)"},
+                  {lb:"Expense",v:expense,c:"var(--red)",ic:"▼",bg:"rgba(244,63,94,0.08)"},
+                  {lb:"Saved",v:Math.max(0,income-expense),c:"var(--cyan)",ic:"●",bg:"rgba(34,211,238,0.08)"},
+                  {lb:"Deductible",v:taxDeductible,c:"var(--violet)",ic:"🧾",bg:"rgba(168,85,247,0.08)"},
                 ].map(r=>(
-                  <div key={r.lb} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9}}>
+                  <div key={r.lb} className="ring-stat-row" style={{
+                    display:"flex",
+                    justifyContent:"space-between",
+                    alignItems:"center",
+                    marginBottom:8,
+                    padding: '5px 8px',
+                    borderRadius: 8,
+                    background: r.bg,
+                    transition: 'all 0.2s ease'
+                  }}>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                      <span style={{color:r.c,fontSize:9}}>{r.ic}</span>
-                      <span style={{fontSize:12,color:"var(--t2)",fontWeight:600}}>{r.lb}</span>
+                      <span style={{color:r.c,fontSize:10}}>{r.ic}</span>
+                      <span style={{fontSize:11,color:"var(--text)",fontWeight:600}}>{r.lb}</span>
                     </div>
-                    <span style={{fontSize:13,fontWeight:800,fontFamily:"var(--mono)",color:r.c}}>{fmt(r.v)}</span>
+                    <span style={{fontSize:12,fontWeight:800,fontFamily:"var(--mono)",color:r.c}}>{fmt(r.v)}</span>
                   </div>
                 ))}
               </div>
@@ -571,17 +659,54 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
       {/* SPENDING BARS */}
       {w.spending_bars && (
         <div className="au d3" style={{margin:"0 18px 14px"}}>
-          <div className="card">
-            <div style={{fontSize:13,fontWeight:800,marginBottom:14}}>Weekly Spend</div>
-            <div style={{display:"flex",alignItems:"flex-end",gap:5,height:72}}>
-              {weekBars.map((v,i)=>(
-                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                  <div style={{width:"100%",height:`${(v/wMax)*64}px`,borderRadius:"5px 5px 0 0",
-                    background:i===6?"linear-gradient(180deg,var(--indigo),#3730a3)":"var(--s3)",
-                    transition:"height .7s cubic-bezier(0.34,1.56,0.64,1)",minHeight:3}}/>
-                  <div style={{fontSize:8,color:"var(--t2)",fontWeight:600}}>{days[i]}</div>
-                </div>
-              ))}
+          <div className="card glass-stat" style={{position:'relative', overflow:'visible'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+              <div style={{fontSize:13,fontWeight:800}}>Weekly Spend Trend</div>
+              <span className="pill" style={{background:'rgba(123,111,255,0.1)', color:'#A89FFF'}}>{fmtK(weekBars.reduce((s,x)=>s+x,0))} total</span>
+            </div>
+            <div style={{display:"flex",alignItems:"flex-end",gap:8,height:90,paddingTop:14,position:'relative'}}>
+              {weekBars.map((v,i)=>{
+                const isToday = i === 6;
+                const percentageHeight = (v/wMax)*68;
+                return (
+                  <div key={i} className="bar-container" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4,position:'relative'}}>
+                    {/* Tooltip on hover */}
+                    <div className="bar-value" style={{
+                      position: 'absolute',
+                      bottom: percentageHeight + 10,
+                      background: 'var(--s4)',
+                      padding: '2px 5px',
+                      borderRadius: 4,
+                      fontSize: 8,
+                      fontFamily: 'var(--mono)',
+                      color: '#fff',
+                      opacity: 0,
+                      transform: 'translateY(5px) scale(0.9)',
+                      transition: 'all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                      pointerEvents: 'none',
+                      whiteSpace: 'nowrap',
+                      border: '1px solid var(--border2)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                    }}>${Math.round(v)}</div>
+
+                    <div className="spend-bar" style={{
+                      width:"100%",
+                      height:`${percentageHeight}px`,
+                      borderRadius:"6px 6px 0 0",
+                      background: isToday 
+                        ? "linear-gradient(180deg, var(--indigo) 0%, var(--cyan) 100%)" 
+                        : v > 0 
+                          ? "linear-gradient(180deg, var(--s4) 0%, var(--s3) 100%)"
+                          : "var(--s2)",
+                      boxShadow: isToday ? "0 0 14px rgba(123,111,255,0.4)" : "none",
+                      transition:"all 0.6s cubic-bezier(0.34,1.56,0.64,1)",
+                      minHeight:3,
+                      cursor: 'pointer'
+                    }}/>
+                    <div style={{fontSize:8,color:isToday?"#A89FFF":"var(--t2)",fontWeight:isToday?800:600,marginTop:2}}>{days[i]}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
