@@ -181,16 +181,16 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   left: 50%;
   transform: translateX(-50%);
   width: 220px;
-  height: 110px;
+  height: 80px;
   border-radius: 0 0 110px 110px;
-  opacity: 0.5;
+  opacity: 0.45;
   animation: diGlowBreathe 4s ease-in-out infinite;
-  filter: blur(35px);
+  filter: blur(28px);
   pointer-events: none;
 }
 @keyframes diGlowBreathe {
-  0%, 100% { opacity: 0.35; transform: translateX(-50%) scale(1); }
-  50% { opacity: 0.6; transform: translateX(-50%) scale(1.08); }
+  0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.55; transform: translateX(-50%) scale(1.08); }
 }
 .di-glow-ring {
   position: absolute;
@@ -198,16 +198,16 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   left: 50%;
   transform: translateX(-50%);
   width: 140px;
-  height: 50px;
+  height: 42px;
   border-radius: 0 0 70px 70px;
-  opacity: 0.25;
-  filter: blur(12px);
+  opacity: 0.22;
+  filter: blur(8px);
   animation: diRingPulse 3s ease-in-out infinite 0.5s;
   pointer-events: none;
 }
 @keyframes diRingPulse {
   0%, 100% { opacity: 0.15; transform: translateX(-50%) scaleY(1); }
-  50% { opacity: 0.35; transform: translateX(-50%) scaleY(1.3); }
+  50% { opacity: 0.3; transform: translateX(-50%) scaleY(1.3); }
 }
 .di-status-bar {
   position: relative;
@@ -215,7 +215,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: calc(env(safe-area-inset-top, 54px) + 6px) 24px 10px;
+  padding: calc(env(safe-area-inset-top, 47px) - 10px) 24px 8px;
   pointer-events: auto;
 }
 .di-status-dot {
@@ -256,16 +256,16 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   opacity: 0;
   animation: diFloat 6s ease-in-out infinite;
 }
-.di-particle:nth-child(1) { left: 30%; top: 30%; animation-delay: 0s; }
-.di-particle:nth-child(2) { left: 70%; top: 20%; animation-delay: 1.2s; }
-.di-particle:nth-child(3) { left: 45%; top: 45%; animation-delay: 2.4s; }
-.di-particle:nth-child(4) { left: 60%; top: 35%; animation-delay: 3.6s; }
-.di-particle:nth-child(5) { left: 35%; top: 25%; animation-delay: 4.8s; }
+.di-particle:nth-child(1) { left: 32%; top: 48px; animation-delay: 0s; }
+.di-particle:nth-child(2) { left: 68%; top: 44px; animation-delay: 1.2s; }
+.di-particle:nth-child(3) { left: 46%; top: 46px; animation-delay: 2.4s; }
+.di-particle:nth-child(4) { left: 58%; top: 50px; animation-delay: 3.6s; }
+.di-particle:nth-child(5) { left: 38%; top: 45px; animation-delay: 4.8s; }
 @keyframes diFloat {
   0% { opacity: 0; transform: translateY(0) scale(0.5); }
-  15% { opacity: 0.7; transform: translateY(-8px) scale(1); }
-  50% { opacity: 0.3; transform: translateY(-25px) scale(0.8); }
-  100% { opacity: 0; transform: translateY(-45px) scale(0.3); }
+  15% { opacity: 0.75; transform: translateY(-12px) scale(1); }
+  50% { opacity: 0.35; transform: translateY(-28px) scale(0.8); }
+  100% { opacity: 0; transform: translateY(-46px) scale(0.3); }
 }
 
 /* ── FAB ── */
@@ -845,6 +845,7 @@ const INIT_SUBS = [
 
 const ALL_WIDGETS = [
   {id:"net_worth",name:"Net Worth",desc:"Total balance across all accounts",ic:"💰",def:true,tag:"free"},
+  {id:"health_score",name:"Financial Health Score",desc:"Overall financial health index & advice",ic:"🔮",def:true,tag:"premium"},
   {id:"bank_cards",name:"Bank Cards",desc:"Swipeable card carousel",ic:"🏦",def:true,tag:"free"},
   {id:"credit_cards",name:"Credit Cards",desc:"CC balances & utilization",ic:"💳",def:true,tag:"free"},
   {id:"monthly_ring",name:"Monthly Summary",desc:"Income vs expense ring chart",ic:"📊",def:true,tag:"free"},
@@ -881,6 +882,131 @@ function Ring({pct,color,size=96,stroke=8,children}){
 
 function Toggle({on,onToggle}){
   return <div className={`tgsw ${on?"on":"off"}`} onClick={onToggle}><div className="tgk"/></div>;
+}
+
+// ─── ANIMATED NUMBER COUNT-UP ────────────────────────────────────────────────
+function AnimatedNumber({ value, formatter = (n) => n.toFixed(0), duration = 700, animateOnMount = true }) {
+  const [displayValue, setDisplayValue] = useState(animateOnMount ? 0 : value);
+
+  useEffect(() => {
+    let start = null;
+    const startVal = Number(displayValue) || 0;
+    const endVal = Number(value) || 0;
+    if (startVal === endVal) {
+      setDisplayValue(endVal);
+      return;
+    }
+
+    let animFrame;
+    const animate = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const easedProgress = progress * (2 - progress); // Ease out quad
+      const current = startVal + (endVal - startVal) * easedProgress;
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animFrame = requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(endVal);
+      }
+    };
+    animFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animFrame);
+  }, [value]);
+
+  return <>{formatter(displayValue)}</>;
+}
+
+// ─── FINANCIAL HEALTH ENGINE ──────────────────────────────────────────────────
+function calculateFinancialHealthScore({ accounts = [], transactions = [], budgets = {}, savings = [] }) {
+  const banks = accounts.filter(a => a.type === "bank");
+  const ccs = accounts.filter(a => a.type === "credit");
+  
+  const totalBank = banks.reduce((s, a) => s + a.balance, 0);
+  const totalCC = ccs.reduce((s, a) => s + a.balance, 0);
+  const totalCCLimit = ccs.reduce((s, a) => s + (a.limit || 0), 0);
+  
+  // 1. Savings Rate Component (Max 30)
+  const income = transactions.filter(t => t.type === "income" && !(t.tags && t.tags.includes('__transfer__'))).reduce((s, t) => s + t.amount, 0);
+  const expense = transactions.filter(t => t.type === "expense" && !(t.tags && t.tags.includes('__transfer__'))).reduce((s, t) => s + t.amount, 0);
+  const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+  
+  let savingsRateScore = 0;
+  if (savingsRate >= 20) savingsRateScore = 30;
+  else if (savingsRate > 0) savingsRateScore = (savingsRate / 20) * 30;
+  savingsRateScore = Math.max(0, Math.round(savingsRateScore));
+  
+  // 2. Budget Adherence Component (Max 25)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const monthExpenses = transactions.filter(t => {
+    if (t.type !== "expense" || (t.tags && t.tags.includes('__transfer__'))) return false;
+    const txDate = new Date(t.date);
+    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+  }).reduce((s, t) => s + t.amount, 0);
+  
+  const totalBudgetLimit = Object.values(budgets || {}).reduce((s, v) => s + v, 0);
+  let budgetScore = 18; // baseline if no budget
+  let budgetPct = 0;
+  if (totalBudgetLimit > 0) {
+    budgetPct = monthExpenses / totalBudgetLimit;
+    if (budgetPct <= 0.75) budgetScore = 25;
+    else if (budgetPct <= 1.0) budgetScore = 25 - ((budgetPct - 0.75) / 0.25) * 15;
+    else budgetScore = Math.max(0, 10 - ((budgetPct - 1.0) / 0.5) * 10);
+  }
+  budgetScore = Math.round(budgetScore);
+  
+  // 3. CC Utilization Component (Max 20)
+  let ccUtilScore = 20;
+  let ccUtil = 0;
+  if (ccs.length > 0) {
+    ccUtil = totalCCLimit > 0 ? totalCC / totalCCLimit : 0;
+    if (ccUtil <= 0.10) ccUtilScore = 20;
+    else if (ccUtil <= 0.30) ccUtilScore = 20 - ((ccUtil - 0.10) / 0.20) * 5;
+    else if (ccUtil <= 0.75) ccUtilScore = 15 - ((ccUtil - 0.30) / 0.45) * 10;
+    else ccUtilScore = Math.max(0, 5 - ((ccUtil - 0.75) / 0.25) * 5);
+  }
+  ccUtilScore = Math.round(ccUtilScore);
+  
+  // 4. Savings Goals Component (Max 15)
+  let goalsScore = 10; // baseline if no goals
+  let goalsProgress = 0;
+  if (savings.length > 0) {
+    const totalProgress = savings.reduce((s, g) => s + (g.target > 0 ? g.saved / g.target : 0), 0);
+    goalsProgress = totalProgress / savings.length;
+    goalsScore = Math.round(goalsProgress * 15);
+  }
+  
+  // 5. Liquid Capital / Cash Debt Coverage (Max 10)
+  let capitalScore = 10;
+  let capRatio = 0;
+  if (totalCC > 0) {
+    capRatio = totalBank / totalCC;
+    if (capRatio >= 3.0) capitalScore = 10;
+    else if (capRatio >= 1.0) capitalScore = 6 + ((capRatio - 1.0) / 2.0) * 4;
+    else capitalScore = capRatio * 6;
+  }
+  capitalScore = Math.max(0, Math.round(capitalScore));
+  
+  const overallScore = Math.min(100, Math.max(0, savingsRateScore + budgetScore + ccUtilScore + goalsScore + capitalScore));
+  
+  return {
+    overallScore,
+    savingsRateScore,
+    budgetScore,
+    ccUtilScore,
+    goalsScore,
+    capitalScore,
+    metrics: {
+      savingsRate: Math.round(savingsRate),
+      budgetPct: Math.round(budgetPct * 100),
+      ccUtil: Math.round(ccUtil * 100),
+      goalsProgress: Math.round(goalsProgress * 100),
+      capRatio: Number(capRatio.toFixed(1))
+    }
+  };
 }
 
 // ─── DYNAMIC ISLAND AMBIENT GLOW (mobile PWA) ────────────────────────────────
@@ -986,10 +1112,163 @@ function BankCardVis({a,onPress}){
   );
 }
 
+// ─── HEALTH SCORE DETAILED BREAKDOWN MODAL ────────────────────────────────────
+function HealthScoreModal({ health, onClose }) {
+  const { overallScore, savingsRateScore, budgetScore, ccUtilScore, goalsScore, capitalScore, metrics } = health;
+
+  const getRating = (s) => {
+    if (s >= 90) return { text: "Excellent", col: "var(--green)", desc: "You are in superb financial shape! Keep it up." };
+    if (s >= 75) return { text: "Good", col: "var(--cyan)", desc: "Great habits! A few optimizations can make it perfect." };
+    if (s >= 50) return { text: "Fair", col: "var(--amber)", desc: "On the right track, but some areas need attention." };
+    return { text: "Needs Review", col: "var(--red)", desc: "High financial stress. Let's take control of your expenses." };
+  };
+
+  const r = getRating(overallScore);
+
+  return (
+    <div className="ov" onClick={onClose}>
+      <div className="sheet" onClick={e => e.stopPropagation()} style={{ maxHeight: "90%", overflowY: "auto" }}>
+        <div className="hdl" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 24 }}>🔮</span>
+          <div className="st" style={{ marginBottom: 0 }}>Financial Health Pulse</div>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 20 }}>
+          Your score is calculated dynamically based on savings, utilization, budgets, and liquid capital.
+        </div>
+
+        {/* Hero Score Display */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 24,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid var(--border)',
+          borderRadius: 20,
+          padding: '20px 16px',
+          marginBottom: 20,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Ambient Glow */}
+          <div style={{
+            position: 'absolute',
+            width: 140,
+            height: 140,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${r.col}1a 0%, transparent 70%)`,
+            pointerEvents: 'none'
+          }} />
+          
+          <Ring pct={overallScore / 100} color={r.col} size={96} stroke={8}>
+            <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "var(--mono)", color: "var(--text)" }}>
+              <AnimatedNumber value={overallScore} />
+            </div>
+            <div style={{ fontSize: 9, color: "var(--t2)", textTransform: "uppercase", letterSpacing: 0.5 }}>Index</div>
+          </Ring>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: "var(--t2)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Rating</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: r.col, marginBottom: 4 }}>{r.text}</div>
+            <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.4 }}>{r.desc}</div>
+          </div>
+        </div>
+
+        {/* Breakdown List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+          {/* 1. Savings Rate */}
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>📈 Savings Rate ({metrics.savingsRate}%)</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 800, color: 'var(--green)' }}>{savingsRateScore}/30 pts</span>
+            </div>
+            <div className="pt" style={{ height: 6 }}><div className="pf" style={{ width: `${(savingsRateScore / 30) * 100}%`, background: 'var(--green)' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--t2)', marginTop: 8, lineHeight: 1.4 }}>
+              {metrics.savingsRate >= 20 
+                ? "✨ Superb! You are saving 20% or more of your income. This keeps your future secure."
+                : `💡 Action: Your savings rate is ${metrics.savingsRate}%. Try saving 20% of your earnings to earn +${Math.round(30 - savingsRateScore)} points.`
+              }
+            </div>
+          </div>
+
+          {/* 2. Budget Adherence */}
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>📊 Budget Adherence ({metrics.budgetPct}%)</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 800, color: 'var(--indigo)' }}>{budgetScore}/25 pts</span>
+            </div>
+            <div className="pt" style={{ height: 6 }}><div className="pf" style={{ width: `${(budgetScore / 25) * 100}%`, background: 'var(--indigo)' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--t2)', marginTop: 8, lineHeight: 1.4 }}>
+              {metrics.budgetPct === 0 
+                ? "💡 Action: You haven't set any budgets this month. Defining budgets will help organize expenses and earn +7 points!"
+                : metrics.budgetPct <= 75 
+                  ? "✨ Outstanding! You are staying well within your budget limits."
+                  : metrics.budgetPct <= 100
+                    ? `💡 Action: You've spent ${metrics.budgetPct}% of your budget. Spend less than 75% to earn maximum points.`
+                    : "⚠️ Alert: You have exceeded your monthly budgets! Take steps to trim variable spending immediately."
+              }
+            </div>
+          </div>
+
+          {/* 3. CC Utilization */}
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>💳 Debt Utilization ({metrics.ccUtil}%)</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 800, color: 'var(--red)' }}>{ccUtilScore}/20 pts</span>
+            </div>
+            <div className="pt" style={{ height: 6 }}><div className="pf" style={{ width: `${(ccUtilScore / 20) * 100}%`, background: 'var(--red)' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--t2)', marginTop: 8, lineHeight: 1.4 }}>
+              {ccUtilScore === 20 
+                ? "✨ Perfect! You have low or zero credit utilization, which keeps your credit profile clean."
+                : `💡 Action: Your credit card utilization is at ${metrics.ccUtil}%. Pay down balances below 10% to claim +${Math.round(20 - ccUtilScore)} points.`
+              }
+            </div>
+          </div>
+
+          {/* 4. Goals Progress */}
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>🎯 Savings Goals Progress ({metrics.goalsProgress}%)</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 800, color: 'var(--amber)' }}>{goalsScore}/15 pts</span>
+            </div>
+            <div className="pt" style={{ height: 6 }}><div className="pf" style={{ width: `${(goalsScore / 15) * 100}%`, background: 'var(--amber)' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--t2)', marginTop: 8, lineHeight: 1.4 }}>
+              {goalsScore === 15 
+                ? "✨ Fantastic! All your active savings goals are fully funded!"
+                : `💡 Action: Your goals are ${metrics.goalsProgress}% complete. Save regularly to boost your goals score.`
+              }
+            </div>
+          </div>
+
+          {/* 5. Liquid Reserves */}
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>🏦 Cash Reserves vs CC Debt ({metrics.capRatio}x)</span>
+              <span style={{ fontSize: 12, fontFamily: 'var(--mono)', fontWeight: 800, color: 'var(--cyan)' }}>{capitalScore}/10 pts</span>
+            </div>
+            <div className="pt" style={{ height: 6 }}><div className="pf" style={{ width: `${(capitalScore / 10) * 100}%`, background: 'var(--cyan)' }} /></div>
+            <div style={{ fontSize: 10, color: 'var(--t2)', marginTop: 8, lineHeight: 1.4 }}>
+              {capitalScore === 10 
+                ? "✨ Solid! Your bank balances cover credit card debts 3 times over, providing strong liquidity."
+                : `💡 Action: Bank balance covers ${metrics.capRatio}x of credit debt. Build emergency reserves or pay down debt to boost cash coverage.`
+              }
+            </div>
+          </div>
+        </div>
+
+        <button className="btn-p" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── SCREENS ──────────────────────────────────────────────────────────────────
 
 function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab,onSignOut,onPayBill}){
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showHealthScore, setShowHealthScore] = useState(false);
+  const health = calculateFinancialHealthScore({ accounts, transactions, budgets, savings });
   const banks = accounts.filter(a=>a.type==="bank");
   const ccs = accounts.filter(a=>a.type==="credit");
   const totalBank = banks.reduce((s,a)=>s+a.balance,0);
@@ -1133,6 +1412,89 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
                 ? <span style={{color:"var(--red)"}}>you'll miss your set budget by {fmt(projectedSpend - totalBudgetLimit)}.</span>
                 : <span style={{color:"var(--green)"}}>you'll beat your set budget by {fmt(totalBudgetLimit - projectedSpend)}!</span>
             ) : "this will be your total spend for the month."}
+          </div>
+        </div>
+      )}
+
+      {/* FINANCIAL HEALTH SCORE WIDGET */}
+      {w.health_score && (
+        <div className="au d1" 
+          onClick={() => setShowHealthScore(true)}
+          style={{
+            margin:"0 18px 14px",
+            background:"var(--s1)",
+            border:"1px solid var(--border)",
+            borderRadius:20,
+            padding:"16px 18px",
+            boxShadow:"0 10px 30px rgba(0,0,0,0.15)",
+            cursor:"pointer",
+            position:"relative",
+            overflow:"hidden",
+            transition:"all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          {/* Subtle Ambient light inside card */}
+          <div style={{
+            position:"absolute",
+            top:-20,
+            right:-20,
+            width:120,
+            height:120,
+            borderRadius:"50%",
+            background:`radial-gradient(circle, ${
+              health.overallScore >= 90 ? "rgba(16, 185, 129, 0.12)" : 
+              health.overallScore >= 75 ? "rgba(34, 211, 238, 0.12)" : 
+              health.overallScore >= 50 ? "rgba(245, 158, 11, 0.12)" : 
+              "rgba(239, 68, 68, 0.12)"
+            } 0%, transparent 70%)`,
+            pointerEvents:"none"
+          }}/>
+          
+          <div style={{display:"flex", alignItems:"center", gap:16, position:"relative", zIndex:2}}>
+            <Ring pct={health.overallScore / 100} 
+              color={
+                health.overallScore >= 90 ? "var(--green)" : 
+                health.overallScore >= 75 ? "var(--cyan)" : 
+                health.overallScore >= 50 ? "var(--amber)" : 
+                "var(--red)"
+              } 
+              size={72} 
+              stroke={6}
+            >
+              <div style={{fontSize:18, fontWeight:900, fontFamily:"var(--mono)", color:"var(--text)"}}>
+                <AnimatedNumber value={health.overallScore} />
+              </div>
+              <div style={{fontSize:8, color:"var(--t2)", textTransform:"uppercase", letterSpacing:0.3}}>Index</div>
+            </Ring>
+            
+            <div style={{flex:1}}>
+              <div style={{fontSize:10, color:"var(--t2)", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:3}}>Financial Health Score</div>
+              <div style={{
+                fontSize:16, 
+                fontWeight:900, 
+                color: 
+                  health.overallScore >= 90 ? "var(--green)" : 
+                  health.overallScore >= 75 ? "var(--cyan)" : 
+                  health.overallScore >= 50 ? "var(--amber)" : 
+                  "var(--red)"
+              }}>
+                {
+                  health.overallScore >= 90 ? "Excellent Pulse 🌟" : 
+                  health.overallScore >= 75 ? "Looking Good 👍" : 
+                  health.overallScore >= 50 ? "Fair Balance ⚖️" : 
+                  "Needs Attention ⚠️"
+                }
+              </div>
+              <div style={{fontSize:11, color:"var(--t2)", marginTop:4, lineHeight:1.3}}>
+                {
+                  health.overallScore >= 90 ? "Top-tier habits! Tap to view detailed breakdown & recommendations." :
+                  health.overallScore >= 75 ? "Looking solid! Tap to see simple steps to score a perfect 100." :
+                  health.overallScore >= 50 ? "Steady progress. Tap to view custom optimization plans." :
+                  "High debt or high spend is dragging you down. Tap to fix it!"
+                }
+              </div>
+            </div>
+            <div style={{fontSize:16, color:"var(--t3)"}}>→</div>
           </div>
         </div>
       )}
@@ -1538,6 +1900,9 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
             );
           })}
         </div>
+      )}
+      {showHealthScore && (
+        <HealthScoreModal health={health} onClose={() => setShowHealthScore(false)} />
       )}
     </div>
   );
@@ -2251,6 +2616,11 @@ function AddTxModal({accounts,onClose,onAdd}){
   const [tags,setTags]=useState("");
   const [date,setDate]=useState(new Date().toISOString().slice(0,10));
   const [autoDetected,setAutoDetected]=useState(false);
+  
+  // Splits State
+  const [splits, setSplits] = useState([]);
+  const totalAllocated = splits.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+  const remainder = parseFloat(amount || 0) - totalAllocated;
 
   // Smart auto-categorization from note keywords
   const AUTO_CAT = {
@@ -2281,19 +2651,51 @@ function AddTxModal({accounts,onClose,onAdd}){
 
   const handleNum=v=>{
     if(v==="."&&amount.includes(".")) return;
-    if(v==="⌫"){setAmount(a=>a.slice(0,-1));return;}
+    if(v==="⌫"){
+      const nextAmt = amount.slice(0,-1);
+      setAmount(nextAmt);
+      // Reset splits if amount changes, as user needs to re-split
+      if (splits.length > 0) setSplits([]);
+      return;
+    }
     if(amount.replace(".","").length>=7) return;
-    setAmount(a=>a+v);
+    const nextAmt = amount+v;
+    setAmount(nextAmt);
+    // Reset splits if amount changes, as user needs to re-split
+    if (splits.length > 0) setSplits([]);
   };
 
   const doAdd=()=>{
     const val=parseFloat(amount);
     if(!val||val<=0||!accountId) return;
-    const finalCategory = type === "income" ? "other" : category;
-    const finalNote = note || (type === "income" ? "Income" : CATS.find(c=>c.id===category).lb);
-    onAdd({amount:val,category:finalCategory,note:finalNote,type,date,accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
+    
+    if (splits.length > 0) {
+      if (Math.abs(remainder) >= 0.01) return; // validate exact allocation match
+      const splitTag = "split_" + Date.now();
+      splits.forEach((s, idx) => {
+        const finalCategory = s.category;
+        const finalNote = `${note || "Split"} (${s.note || CATS.find(c=>c.id===s.category).lb}) [Split ${idx + 1}/${splits.length}]`;
+        onAdd({
+          amount: parseFloat(s.amount) || 0,
+          category: finalCategory,
+          note: finalNote,
+          type,
+          date,
+          accountId,
+          recurring,
+          taxDeductible: taxDed,
+          tags: [...(tags ? tags.split(",").map(t=>t.trim()).filter(Boolean) : []), splitTag]
+        });
+      });
+    } else {
+      const finalCategory = type === "income" ? "other" : category;
+      const finalNote = note || (type === "income" ? "Income" : CATS.find(c=>c.id===category).lb);
+      onAdd({amount:val,category:finalCategory,note:finalNote,type,date,accountId,recurring,taxDeductible:taxDed,tags:tags?tags.split(",").map(t=>t.trim()).filter(Boolean):[]});
+    }
     onClose();
   };
+
+  const isSaveDisabled = splits.length > 0 && Math.abs(remainder) >= 0.01;
 
   return (
     <div className="ov" onClick={onClose}>
@@ -2301,8 +2703,8 @@ function AddTxModal({accounts,onClose,onAdd}){
         <div className="hdl"/>
         <div className="st">New Transaction</div>
         <div className="ttog">
-          <button className={`tbtn ${type==="expense"?"ae":""}`} onClick={()=>setType("expense")}>▼ Expense</button>
-          <button className={`tbtn ${type==="income"?"ai":""}`} onClick={()=>setType("income")}>▲ Income</button>
+          <button className={`tbtn ${type==="expense"?"ae":""}`} onClick={()=>{setType("expense"); if(splits.length>0)setSplits([]);}}>▼ Expense</button>
+          <button className={`tbtn ${type==="income"?"ai":""}`} onClick={()=>{setType("income"); setSplits([]);}}>▲ Income</button>
         </div>
         <div className="amtd">
           <span style={{color:type==="income"?"var(--green)":"var(--text)"}}>${amount||"0"}</span>
@@ -2316,7 +2718,7 @@ function AddTxModal({accounts,onClose,onAdd}){
         <div className="sel-row">
           {accounts.map(a=><div key={a.id} className={`chip ${accountId===a.id?"on":""}`} onClick={()=>setAccountId(a.id)}>{a.icon} {a.name}</div>)}
         </div>
-        {type === "expense" && (
+        {type === "expense" && splits.length === 0 && (
           <>
             <div className="ilb">Category</div>
             <div className="cgrid">
@@ -2339,10 +2741,163 @@ function AddTxModal({accounts,onClose,onAdd}){
             <input className="inp" placeholder="(try 'Netflix' or 'Uber')" value={note} onChange={e=>setNote(e.target.value)}/>
           </div>
         </div>
-        {autoDetected && type==="expense" && (
+        {autoDetected && type==="expense" && splits.length === 0 && (
           <div style={{fontSize:10,color:'var(--cyan)',marginTop:-8,marginBottom:8,paddingLeft:4}}>✨ Auto-detected: {(CATS.find(c=>c.id===category)||{}).lb}</div>
         )}
         <input className="inp" placeholder="Tags (comma separated): work, travel..." value={tags} onChange={e=>setTags(e.target.value)}/>
+
+        {type === "expense" && splits.length === 0 && (
+          <div style={{textAlign:"center", margin:"4px 0 12px"}}>
+            <span 
+              onClick={() => {
+                const initialVal = parseFloat(amount) || 0;
+                if(initialVal <= 0) return;
+                setSplits([
+                  { category: category, amount: String((initialVal / 2).toFixed(2)), note: "" },
+                  { category: "other", amount: String((initialVal / 2).toFixed(2)), note: "" }
+                ]);
+              }}
+              style={{
+                fontSize: 12, 
+                color: "var(--indigo)", 
+                fontWeight: 800, 
+                cursor: parseFloat(amount) > 0 ? "pointer" : "not-allowed", 
+                borderBottom: "1.5px dashed var(--indigo)",
+                paddingBottom: 2,
+                opacity: parseFloat(amount) > 0 ? 1 : 0.5
+              }}
+            >
+              🥞 Split Receipt into Categories
+            </span>
+          </div>
+        )}
+
+        {/* Splits Manager UI */}
+        {type === "expense" && splits.length > 0 && (
+          <div style={{ background: "var(--s2)", border: "1px solid var(--border)", borderRadius: 18, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>🥞 Receipt Splits</span>
+              <span 
+                onClick={() => setSplits([])}
+                style={{ fontSize: 11, color: "var(--red)", fontWeight: 800, cursor: "pointer" }}
+              >
+                Cancel Split
+              </span>
+            </div>
+
+            {/* Sum Indicator */}
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              fontSize: 11, 
+              fontWeight: 700, 
+              color: "var(--t2)", 
+              marginBottom: 12, 
+              paddingBottom: 8, 
+              borderBottom: "1px solid var(--border)"
+            }}>
+              <span>Total: <strong style={{color:"var(--text)"}}>${parseFloat(amount || 0).toFixed(2)}</strong></span>
+              <span>Allocated: <strong style={{color: Math.abs(remainder) < 0.01 ? "var(--green)" : "var(--amber)"}}>${totalAllocated.toFixed(2)}</strong></span>
+              <span>Left: <strong style={{color: Math.abs(remainder) < 0.01 ? "var(--green)" : "var(--red)"}}>${remainder.toFixed(2)}</strong></span>
+            </div>
+
+            {/* Scrollable list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 180, overflowY: "auto", paddingRight: 4 }}>
+              {splits.map((s, idx) => (
+                <div key={idx} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  {/* Category Dropdown */}
+                  <select 
+                    value={s.category} 
+                    onChange={e => {
+                      const next = [...splits];
+                      next[idx].category = e.target.value;
+                      setSplits(next);
+                    }}
+                    style={{ 
+                      background: "var(--s1)", 
+                      border: "1.5px solid var(--border)", 
+                      borderRadius: 10, 
+                      padding: "6px 8px", 
+                      color: "var(--text)", 
+                      fontFamily: "var(--font)", 
+                      fontSize: 11,
+                      outline: "none"
+                    }}
+                  >
+                    {CATS.map(c => <option key={c.id} value={c.id}>{c.ic} {c.lb}</option>)}
+                  </select>
+
+                  {/* Amount Input */}
+                  <input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={s.amount} 
+                    onChange={e => {
+                      const next = [...splits];
+                      next[idx].amount = e.target.value;
+                      setSplits(next);
+                    }}
+                    style={{ 
+                      width: 68, 
+                      background: "var(--s1)", 
+                      border: "1.5px solid var(--border)", 
+                      borderRadius: 10, 
+                      padding: "6px 8px", 
+                      color: "var(--text)", 
+                      fontFamily: "var(--mono)", 
+                      fontSize: 11,
+                      textAlign: "right",
+                      outline: "none"
+                    }}
+                  />
+
+                  {/* Note Input */}
+                  <input 
+                    type="text" 
+                    placeholder="Item description..." 
+                    value={s.note} 
+                    onChange={e => {
+                      const next = [...splits];
+                      next[idx].note = e.target.value;
+                      setSplits(next);
+                    }}
+                    style={{ 
+                      flex: 1, 
+                      background: "var(--s1)", 
+                      border: "1.5px solid var(--border)", 
+                      borderRadius: 10, 
+                      padding: "6px 8px", 
+                      color: "var(--text)", 
+                      fontFamily: "var(--font)", 
+                      fontSize: 11,
+                      outline: "none"
+                    }}
+                  />
+
+                  {/* Delete button */}
+                  {splits.length > 2 && (
+                    <span 
+                      onClick={() => setSplits(splits.filter((_, i) => i !== idx))}
+                      style={{ fontSize: 14, color: "var(--red)", cursor: "pointer", padding: "0 4px" }}
+                    >
+                      ×
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add split CTA */}
+            <div style={{ marginTop: 10, textAlign: "left" }}>
+              <span 
+                onClick={() => setSplits([...splits, { category: "other", amount: remainder > 0 ? String(remainder.toFixed(2)) : "0.00", note: "" }])}
+                style={{ fontSize: 11, color: "var(--indigo)", fontWeight: 800, cursor: "pointer" }}
+              >
+                ＋ Add Split Item
+              </span>
+            </div>
+          </div>
+        )}
 
         {type === "expense" && (
           <div style={{display:"flex",gap:12,marginBottom:14}}>
@@ -2362,7 +2917,14 @@ function AddTxModal({accounts,onClose,onAdd}){
             </div>
           </div>
         )}
-        <button className="btn-p" style={{marginTop: type === 'income' ? 14 : 0}} onClick={doAdd}>Add {type==="income"?"Income":"Expense"}</button>
+        <button 
+          className="btn-p" 
+          style={{marginTop: type === 'income' ? 14 : 0, opacity: isSaveDisabled ? 0.5 : 1, cursor: isSaveDisabled ? "not-allowed" : "pointer"}} 
+          onClick={doAdd}
+          disabled={isSaveDisabled}
+        >
+          {isSaveDisabled ? `Allocation Incomplete (Need $${remainder.toFixed(2)} more)` : `Add ${type==="income"?"Income":"Expense"}`}
+        </button>
       </div>
     </div>
   );
@@ -2469,6 +3031,8 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
   const [date, setDate] = useState((tx.date || new Date().toISOString()).slice(0,10));
   const [confirmDel, setConfirmDel] = useState(false);
 
+  const isSplit = tx.tags?.some(t => t.startsWith('split_'));
+
   const handleNum = v => {
     if (v === "." && amount.includes(".")) return;
     if (v === "⌫") { setAmount(a => a.slice(0, -1)); return; }
@@ -2494,6 +3058,22 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
       <div className="sheet" onClick={e => e.stopPropagation()}>
         <div className="hdl"/>
         <div className="st">Edit Transaction</div>
+        
+        {isSplit && (
+          <div style={{
+            background: "rgba(123, 111, 255, 0.08)",
+            border: "1.5px dashed rgba(123, 111, 255, 0.25)",
+            borderRadius: 14,
+            padding: "10px 12px",
+            marginBottom: 14,
+            fontSize: 11,
+            color: "#C4BEFF",
+            lineHeight: 1.4
+          }}>
+            🥞 <strong>Split Receipt Component:</strong> This transaction is linked to other split items from the same receipt. Deleting it will delete all linked components to maintain balance integrity.
+          </div>
+        )}
+
         <div className="ttog">
           <button className={`tbtn ${type==="expense"?"ae":""}`} onClick={() => setType("expense")}>▼ Expense</button>
           <button className={`tbtn ${type==="income"?"ai":""}`} onClick={() => setType("income")}>▲ Income</button>
@@ -2549,9 +3129,13 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
         )}
         <button className="btn-p" onClick={doSave}>Save Changes</button>
         {!confirmDel ? (
-          <button className="btn-del" onClick={() => setConfirmDel(true)}>Delete Transaction</button>
+          <button className="btn-del" onClick={() => setConfirmDel(true)}>
+            {isSplit ? "Delete Split Receipt" : "Delete Transaction"}
+          </button>
         ) : (
-          <button className="btn-del" style={{background:'rgba(244,63,94,0.25)',fontWeight:900}} onClick={() => {onDelete(tx);onClose();}}>⚠ Confirm Delete — Cannot Undo</button>
+          <button className="btn-del" style={{background:'rgba(244,63,94,0.25)',fontWeight:900}} onClick={() => {onDelete(tx);onClose();}}>
+            {isSplit ? "⚠ Confirm Delete ALL Linked Splits" : "⚠ Confirm Delete — Cannot Undo"}
+          </button>
         )}
       </div>
     </div>
@@ -2852,17 +3436,35 @@ export default function App(){
   };
 
   const handleDeleteTx = async (tx) => {
-    const acct = uiAccounts.find(a => a.id === (tx.accountId || tx.account_id));
-    if (acct) {
-      let reversal = 0;
-      if (acct.type === "bank") {
-        reversal = tx.type === "income" ? -tx.amount : tx.amount;
-      } else {
-        reversal = tx.type === "income" ? tx.amount : -tx.amount;
+    const splitTag = tx.tags?.find(t => t.startsWith('split_'));
+    if (splitTag) {
+      const linked = transactions.filter(t => t.tags?.includes(splitTag));
+      for (const lt of linked) {
+        const acct = uiAccounts.find(a => a.id === (lt.accountId || lt.account_id));
+        if (acct) {
+          let reversal = 0;
+          if (acct.type === "bank") {
+            reversal = lt.type === "income" ? -lt.amount : lt.amount;
+          } else {
+            reversal = lt.type === "income" ? lt.amount : -lt.amount;
+          }
+          await updateAccount(acct.id, { balance: acct.balance + reversal });
+        }
+        await deleteTransaction(lt.id);
       }
-      await updateAccount(acct.id, { balance: acct.balance + reversal });
+    } else {
+      const acct = uiAccounts.find(a => a.id === (tx.accountId || tx.account_id));
+      if (acct) {
+        let reversal = 0;
+        if (acct.type === "bank") {
+          reversal = tx.type === "income" ? -tx.amount : tx.amount;
+        } else {
+          reversal = tx.type === "income" ? tx.amount : -tx.amount;
+        }
+        await updateAccount(acct.id, { balance: acct.balance + reversal });
+      }
+      await deleteTransaction(tx.id);
     }
-    await deleteTransaction(tx.id);
   };
 
   // Normalise DB account row to UI shape
