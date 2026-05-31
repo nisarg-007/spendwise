@@ -54,7 +54,88 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 30px 100px rgba(0,0,0,0.8);
 }
-.island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#000;border-radius:22px;z-index:50;}
+.island{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  height:37px;background:#000;border-radius:22px;z-index:50;
+  cursor:pointer;overflow:hidden;
+  transition: width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              height 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-radius 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+              top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.6s ease;
+  display:flex;align-items:center;justify-content:center;
+}
+.island.compact{width:126px;height:37px;border-radius:22px;}
+.island.expanded{width:340px;height:170px;border-radius:28px;top:10px;}
+.island-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;height:100%;padding:0 14px;gap:6px;
+  transition:opacity 0.2s ease;
+}
+.island.expanded .island-inner{
+  flex-direction:column;align-items:stretch;justify-content:flex-start;
+  padding:14px 16px 12px;gap:0;
+}
+.island-compact-left{display:flex;align-items:center;gap:6px;}
+.island-compact-right{display:flex;align-items:center;gap:4px;}
+.island-dot{
+  width:7px;height:7px;border-radius:50%;
+  animation:islandPulse 2s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes islandPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.7);}}
+.island-ticker{
+  font-size:10px;font-weight:700;font-family:var(--mono);
+  color:rgba(255,255,255,0.85);letter-spacing:-0.3px;
+  white-space:nowrap;overflow:hidden;
+}
+.island-cam{
+  width:11px;height:11px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #1a1a3e, #000);
+  border:1.5px solid #1a1a2e;
+  flex-shrink:0;
+}
+/* Expanded sections */
+.island-exp-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;
+}
+.island-exp-title{
+  font-size:11px;font-weight:800;color:rgba(255,255,255,0.5);
+  letter-spacing:1px;text-transform:uppercase;
+}
+.island-exp-close{
+  font-size:10px;color:rgba(255,255,255,0.3);font-weight:600;
+}
+.island-exp-main{
+  display:flex;align-items:center;gap:14px;margin-bottom:12px;
+}
+.island-exp-amount{
+  font-size:28px;font-weight:900;font-family:var(--mono);
+  color:#fff;letter-spacing:-1.5px;line-height:1;
+}
+.island-exp-badge{
+  padding:3px 8px;border-radius:100px;font-size:9px;font-weight:800;
+  display:inline-flex;align-items:center;gap:3px;
+}
+.island-exp-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;
+}
+.island-exp-label{
+  font-size:10px;color:rgba(255,255,255,0.45);font-weight:600;
+}
+.island-exp-value{
+  font-size:11px;font-weight:800;font-family:var(--mono);color:#fff;
+}
+.island-progress-track{
+  width:100%;height:3px;background:rgba(255,255,255,0.08);
+  border-radius:100px;overflow:hidden;margin-top:8px;
+}
+.island-progress-fill{
+  height:100%;border-radius:100px;
+  transition:width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 .sbar{height:54px;display:flex;align-items:flex-end;padding:0 26px 10px;justify-content:space-between;flex-shrink:0;z-index:10;position:relative;}
 .sbar-t{font-size:15px;font-weight:700;letter-spacing:-.3px;color:var(--text);}
 .sbar-ic{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--t2);}
@@ -79,9 +160,112 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   .app-wrapper { padding: 0; background: var(--bg); }
   .phone { width: 100vw; height: 100dvh; border-radius: 0; box-shadow: none; border:none; }
   .island, .sbar { display: none !important; }
-  .scr { padding-top: max(55px, env(safe-area-inset-top)); }
+  .scr { padding-top: 0; }
   .bnav { padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 12px)); height: auto; padding-top: 10px; }
   .fab { bottom: max(106px, calc(92px + env(safe-area-inset-bottom))); }
+  .di-glow { display: block !important; }
+}
+
+/* ── DYNAMIC ISLAND AMBIENT GLOW (mobile PWA only) ── */
+.di-glow {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  width: 100%;
+  pointer-events: none;
+}
+.di-glow-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 110px;
+  border-radius: 0 0 110px 110px;
+  opacity: 0.5;
+  animation: diGlowBreathe 4s ease-in-out infinite;
+  filter: blur(35px);
+  pointer-events: none;
+}
+@keyframes diGlowBreathe {
+  0%, 100% { opacity: 0.35; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.6; transform: translateX(-50%) scale(1.08); }
+}
+.di-glow-ring {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 50px;
+  border-radius: 0 0 70px 70px;
+  opacity: 0.25;
+  filter: blur(12px);
+  animation: diRingPulse 3s ease-in-out infinite 0.5s;
+  pointer-events: none;
+}
+@keyframes diRingPulse {
+  0%, 100% { opacity: 0.15; transform: translateX(-50%) scaleY(1); }
+  50% { opacity: 0.35; transform: translateX(-50%) scaleY(1.3); }
+}
+.di-status-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 54px) + 6px) 24px 10px;
+  pointer-events: auto;
+}
+.di-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: islandPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.di-status-text {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text);
+  opacity: 0.5;
+  letter-spacing: -0.3px;
+}
+.di-status-divider {
+  width: 1px;
+  height: 10px;
+  background: var(--border2);
+  opacity: 0.4;
+}
+.di-particles {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 80px;
+  pointer-events: none;
+}
+.di-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: diFloat 6s ease-in-out infinite;
+}
+.di-particle:nth-child(1) { left: 30%; top: 30%; animation-delay: 0s; }
+.di-particle:nth-child(2) { left: 70%; top: 20%; animation-delay: 1.2s; }
+.di-particle:nth-child(3) { left: 45%; top: 45%; animation-delay: 2.4s; }
+.di-particle:nth-child(4) { left: 60%; top: 35%; animation-delay: 3.6s; }
+.di-particle:nth-child(5) { left: 35%; top: 25%; animation-delay: 4.8s; }
+@keyframes diFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0.5); }
+  15% { opacity: 0.7; transform: translateY(-8px) scale(1); }
+  50% { opacity: 0.3; transform: translateY(-25px) scale(0.8); }
+  100% { opacity: 0; transform: translateY(-45px) scale(0.3); }
 }
 
 /* ── FAB ── */
@@ -697,6 +881,79 @@ function Ring({pct,color,size=96,stroke=8,children}){
 
 function Toggle({on,onToggle}){
   return <div className={`tgsw ${on?"on":"off"}`} onClick={onToggle}><div className="tgk"/></div>;
+}
+
+// ─── DYNAMIC ISLAND AMBIENT GLOW (mobile PWA) ────────────────────────────────
+function DynamicIslandGlow({ transactions, budgets }) {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const todaySpend = transactions
+    .filter(t => t.type === "expense" && t.date === todayStr && !(t.tags && t.tags.includes('__transfer__')))
+    .reduce((s, t) => s + t.amount, 0);
+
+  const monthExpenses = transactions
+    .filter(t => {
+      if (t.type !== "expense" || (t.tags && t.tags.includes('__transfer__'))) return false;
+      const d = new Date(t.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((s, t) => s + t.amount, 0);
+
+  const totalBudget = Object.values(budgets || {}).reduce((s, v) => s + v, 0);
+  const budgetPct = totalBudget > 0 ? Math.min(1, monthExpenses / totalBudget) : 0;
+
+  // Health: green (< 60%), amber (60-85%), red (> 85%)
+  const health = budgetPct < 0.6 ? "good" : budgetPct < 0.85 ? "warn" : "over";
+  const glowColor = health === "good" ? "rgba(16, 185, 129, 0.6)"
+    : health === "warn" ? "rgba(245, 158, 11, 0.6)"
+    : "rgba(239, 68, 68, 0.6)";
+  const ringColor = health === "good" ? "rgba(16, 185, 129, 0.4)"
+    : health === "warn" ? "rgba(245, 158, 11, 0.4)"
+    : "rgba(239, 68, 68, 0.4)";
+  const dotColor = health === "good" ? "#10B981" : health === "warn" ? "#F59E0B" : "#EF4444";
+  const particleColor = health === "good" ? "#34D399" : health === "warn" ? "#FCD34D" : "#FCA5A5";
+
+  const lastTx = [...transactions]
+    .filter(t => t.type === "expense" && !(t.tags && t.tags.includes('__transfer__')))
+    .sort((a, b) => b.id - a.id)[0];
+  const lastCat = lastTx ? (CATS.find(c => c.id === lastTx.category) || CATS[CATS.length - 1]) : null;
+
+  return (
+    <div className="di-glow">
+      {/* Ambient glow emanating from the island cutout */}
+      <div className="di-glow-bg" style={{ background: `radial-gradient(ellipse, ${glowColor} 0%, transparent 70%)` }} />
+      <div className="di-glow-ring" style={{ background: `radial-gradient(ellipse, ${ringColor} 0%, transparent 70%)` }} />
+
+      {/* Floating particles */}
+      <div className="di-particles">
+        <div className="di-particle" style={{ background: particleColor }} />
+        <div className="di-particle" style={{ background: particleColor }} />
+        <div className="di-particle" style={{ background: particleColor }} />
+        <div className="di-particle" style={{ background: particleColor }} />
+        <div className="di-particle" style={{ background: particleColor }} />
+      </div>
+
+      {/* Compact status ticker below island */}
+      <div className="di-status-bar">
+        <div className="di-status-dot" style={{ background: dotColor }} />
+        <span className="di-status-text">
+          Today ${todaySpend > 0 ? fmtK(todaySpend) : "$0"}
+        </span>
+        <div className="di-status-divider" />
+        <span className="di-status-text">
+          {lastCat ? `${lastCat.ic} ${lastCat.lb}` : "No spend"}
+        </span>
+        {totalBudget > 0 && (
+          <>
+            <div className="di-status-divider" />
+            <span className="di-status-text" style={{ color: dotColor, opacity: 0.8 }}>
+              {Math.round(budgetPct * 100)}%
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── BANK CARD VISUAL ─────────────────────────────────────────────────────────
@@ -2617,12 +2874,59 @@ export default function App(){
 
   const timeStr=time.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:false});
 
+  // Theme-aware nav icon sets — each theme gets a distinct visual language
+  const NAV_ICONS = {
+    // Minimal geometric (default / swiss_grotesk)
+    _default: {
+      home:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+      accounts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+      history:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+      budget:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><path d="M21 3v6h-6"/></svg>,
+      more:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>,
+    },
+    // Brutalist — angular bold strokes
+    brutalist_steel: {
+      home:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="square"><path d="M3 10L12 3l9 7v11H3z"/><rect x="9" y="14" width="6" height="8"/></svg>,
+      accounts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="square"><rect x="2" y="5" width="20" height="14"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="14" x2="10" y2="14"/></svg>,
+      history:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="square"><rect x="3" y="3" width="18" height="18"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>,
+      budget:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="square"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
+      more:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="square"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>,
+    },
+    // Rounded organic — sage/mint/nordic themes
+    _organic: {
+      home:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3L4 9v12h5v-6a3 3 0 0 1 6 0v6h5V9z"/></svg>,
+      accounts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M19 5H5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3z"/><circle cx="16" cy="12" r="2"/></svg>,
+      history:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>,
+      budget:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 0 20"/><path d="M12 2v10l7 4"/></svg>,
+      more:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>,
+    },
+    // Luxury gold — ornate double-stroke
+    champagne_espresso: {
+      home:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L3 9v12h7v-6h4v6h7V9z"/><path d="M12 5l6 5" opacity="0.4"/></svg>,
+      accounts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="17" cy="15" r="1.5" fill={c}/></svg>,
+      history:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/><circle cx="12" cy="12" r="2" fill={c} opacity="0.3"/></svg>,
+      budget:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+      more:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>,
+    },
+  };
+
+  // Map themes to their icon set
+  const iconSetMap = {
+    swiss_grotesk: '_default', obsidian_terracotta: '_default', tokyo_midnight: '_default',
+    cybernetic_carbon: '_default', sovereign_cobalt: '_default',
+    brutalist_steel: 'brutalist_steel',
+    nordic_sage: '_organic', pearl_mint: '_organic', sage_alabaster: '_organic',
+    champagne_espresso: 'champagne_espresso',
+  };
+  const iconSetKey = iconSetMap[activeTheme.id] || '_default';
+  const navIcons = NAV_ICONS[iconSetKey] || NAV_ICONS._default;
+
   const TABS=[
-    {id:"home",ic:"⬟",lb:"Home"},
-    {id:"accounts",ic:"◈",lb:"Accounts"},
-    {id:"transactions",ic:"≡",lb:"History"},
-    {id:"budget",ic:"◎",lb:"Budget"},
-    {id:"more",ic:"⊞",lb:"More"},
+    {id:"home",    key:"home",     lb:"Home"},
+    {id:"accounts",key:"accounts", lb:"Accounts"},
+    {id:"transactions",key:"history",lb:"History"},
+    {id:"budget",  key:"budget",   lb:"Budget"},
+    {id:"more",    key:"more",     lb:"More"},
   ];
 
   return (
@@ -2659,6 +2963,13 @@ export default function App(){
           background: ${activeTheme.id === "pearl_mint" ? "rgba(255, 255, 255, 0.45)" : activeTheme.id === "sage_alabaster" ? "#FFFFFF" : activeTheme.bg} !important;
           backdrop-filter: ${activeTheme.id === "pearl_mint" ? "blur(30px)" : "none"} !important;
         }
+        .bnav {
+          background: ${activeTheme.s1} !important;
+          border-top-color: ${activeTheme.border} !important;
+        }
+        .ni.active .ni-ic {
+          background: ${activeTheme.id === "pearl_mint" || activeTheme.id === "sage_alabaster" ? "rgba(0,0,0,0.06)" : "rgba(255, 255, 255, 0.06)"} !important;
+        }
       `}</style>
       <div className="phone">
         <div className="island"/>
@@ -2668,6 +2979,7 @@ export default function App(){
         </div>
 
         <div className="scr">
+          <DynamicIslandGlow transactions={transactions} budgets={budgets} />
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
           {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
           {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)} onClearHistory={handleClearHistory}/>}
@@ -2704,12 +3016,16 @@ export default function App(){
         <div className="fab" onClick={() => setShowFabMenu(!showFabMenu)} style={showFabMenu ? {background:'linear-gradient(135deg,#F43F5E,#E11D48)',transform:'rotate(45deg)'} : {}}>＋</div>
 
         <div className="bnav">
-          {TABS.map(t=>(
-            <div key={t.id} className={`ni ${tab===t.id?"active":""}`} onClick={()=>{setTab(t.id);setShowFabMenu(false);}}>
-              <div className="ni-ic">{t.ic}</div>
-              <div className="ni-lb">{t.lb}</div>
-            </div>
-          ))}
+          {TABS.map(t=>{
+            const isActive = tab===t.id;
+            const iconColor = isActive ? activeTheme.indigo : activeTheme.t3;
+            return (
+              <div key={t.id} className={`ni ${isActive?"active":""}`} onClick={()=>{setTab(t.id);setShowFabMenu(false);}}>
+                <div className="ni-ic">{navIcons[t.key](iconColor)}</div>
+                <div className="ni-lb" style={isActive ? {color: activeTheme.indigo} : {}}>{t.lb}</div>
+              </div>
+            );
+          })}
         </div>
 
         {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={handleAddTx}/>}
