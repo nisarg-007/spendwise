@@ -236,6 +236,27 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .au{animation:fadeUp .38s ease both;}
 .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}
 
+@keyframes scrollReveal {
+  from {
+    opacity: 0.1;
+    transform: translateY(35px) scale(0.96);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .au {
+    animation: scrollReveal linear both !important;
+    animation-timeline: view() !important;
+    animation-range: entry 2% cover 25% !important;
+  }
+}
+
 /* ── FEATURE TAG ── */
 .ftag{font-size:9px;padding:2px 7px;border-radius:100px;font-weight:800;letter-spacing:.3px;}
 .ftag-p{background:rgba(255,255,255,0.08);color:var(--text);}
@@ -684,7 +705,7 @@ function BankCardVis({a,onPress}){
   const bg = isCC ? a.color : BANK_THEMES[a.themeIdx||0];
   const pct = isCC && a.limit ? a.balance/a.limit : 0;
   return (
-    <div className="bcard" onClick={onPress} style={{background:bg}}>
+    <div className="bcard" onClick={onPress} style={{background:bg, scrollSnapAlign:"start"}}>
       <div style={{position:"absolute",right:-25,top:-25,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
       <div style={{position:"absolute",right:20,bottom:-35,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.035)"}}/>
       {/* Chip */}
@@ -863,7 +884,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
       {w.bank_cards && banks.length>0 && (
         <div className="au d1">
           <div className="sh"><div className="sh-t">🏦 Bank Accounts</div><div className="sh-a" onClick={onAddAcct}>+ Add</div></div>
-          <div style={{display:"flex",overflowX:"auto",padding:"0 18px 4px",scrollbarWidth:"none"}}>
+          <div style={{display:"flex",overflowX:"auto",padding:"0 18px 4px",scrollbarWidth:"none",scrollSnapType:"x mandatory",scrollBehavior:"smooth"}}>
             {banks.map(a=><BankCardVis key={a.id} a={a} onPress={()=>onEditAcct(a)}/>)}
           </div>
         </div>
