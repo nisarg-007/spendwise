@@ -1999,6 +1999,49 @@ export default function App(){
   };
 
   const handleEditTx = async (txId, changes) => {
+    const originalTx = transactions.find(t => t.id === txId);
+    if (originalTx) {
+      const newAmount = changes.amount !== undefined ? changes.amount : originalTx.amount;
+      const newType = changes.type !== undefined ? changes.type : originalTx.type;
+      const newAccountId = changes.accountId !== undefined ? changes.accountId : originalTx.accountId;
+
+      // 1. Calculate reversal for the original account
+      const oldAcct = uiAccounts.find(a => a.id === originalTx.accountId);
+      let oldBalanceChange = 0;
+      if (oldAcct) {
+        if (oldAcct.type === "bank") {
+          oldBalanceChange = originalTx.type === "income" ? -originalTx.amount : originalTx.amount;
+        } else {
+          oldBalanceChange = originalTx.type === "income" ? originalTx.amount : -originalTx.amount;
+        }
+      }
+
+      // 2. Calculate balance change for the new account
+      const newAcct = uiAccounts.find(a => a.id === newAccountId);
+      let newBalanceChange = 0;
+      if (newAcct) {
+        if (newAcct.type === "bank") {
+          newBalanceChange = newType === "income" ? newAmount : -newAmount;
+        } else {
+          newBalanceChange = newType === "income" ? -newAmount : newAmount;
+        }
+      }
+
+      // 3. Update the balances in Supabase and state
+      if (oldAcct && newAcct && oldAcct.id === newAcct.id) {
+        // Same account - apply both changes to it
+        const totalChange = oldBalanceChange + newBalanceChange;
+        await updateAccount(oldAcct.id, { balance: oldAcct.balance + totalChange });
+      } else {
+        // Different accounts
+        if (oldAcct) {
+          await updateAccount(oldAcct.id, { balance: oldAcct.balance + oldBalanceChange });
+        }
+        if (newAcct) {
+          await updateAccount(newAcct.id, { balance: newAcct.balance + newBalanceChange });
+        }
+      }
+    }
     await updateTransaction(txId, changes);
   };
 
