@@ -56,7 +56,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 }
 .island{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#000;border-radius:22px;z-index:50;}
 .sbar{height:54px;display:flex;align-items:flex-end;padding:0 26px 10px;justify-content:space-between;flex-shrink:0;z-index:10;position:relative;}
-.sbar-t{font-size:15px;font-weight:700;letter-spacing:-.3px;color:#fff;}
+.sbar-t{font-size:15px;font-weight:700;letter-spacing:-.3px;color:var(--text);}
 .sbar-ic{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--t2);}
 .scr{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;}
 .scr::-webkit-scrollbar{display:none;}
@@ -72,7 +72,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .ni-ic{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;}
 .ni.active .ni-ic{background:rgba(255, 255, 255, 0.06);}
 .ni-lb{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:.4px;transition:color .2s;text-transform:uppercase;}
-.ni.active .ni-lb{color:#fff;}
+.ni.active .ni-lb{color:var(--text);}
 
 /* ── MOBILE RESPONSIVE TWEAKS ── */
 @media (max-width: 480px) {
@@ -92,7 +92,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 
 /* ── PAGE HEADER ── */
 .ph{padding:12px 18px 8px;display:flex;align-items:center;justify-content:space-between;}
-.ph-t{font-size:28px;font-weight:900;letter-spacing:-1.2px;color:#fff;}
+.ph-t{font-size:28px;font-weight:900;letter-spacing:-1.2px;color:var(--text);}
 .av{width:38px;height:38px;border-radius:13px;background:#27272A;
   display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;}
 
@@ -115,7 +115,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 
 /* ── SECTION HEAD ── */
 .sh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 8px;}
-.sh-t{font-size:15px;font-weight:800;letter-spacing:-.3px;color:#fff;}
+.sh-t{font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--text);}
 .sh-a{font-size:12px;color:var(--t2);font-weight:700;cursor:pointer;}
 
 /* ── PROGRESS ── */
@@ -137,7 +137,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 }
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .hdl{width:36px;height:4px;background:rgba(255,255,255,0.1);border-radius:100px;margin:0 auto 16px;}
-.st{font-size:20px;font-weight:900;letter-spacing:-.6px;margin-bottom:14px;color:#fff;}
+.st{font-size:20px;font-weight:900;letter-spacing:-.6px;margin-bottom:14px;color:var(--text);}
 
 .inp{
   width:100%;
@@ -175,14 +175,14 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .sel-row::-webkit-scrollbar{display:none;}
 .chip{padding:7px 13px;border-radius:100px;border:1.5px solid var(--border);background:var(--s2);
   color:var(--t2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
-.chip.on{border-color:#fff;background:rgba(255,255,255,.08);color:#fff;}
+.chip.on{border-color:var(--text);background:rgba(255,255,255,.08);color:var(--text);}
 
 .cgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
 .cbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 3px;
   border-radius:var(--r14);border:1.5px solid var(--border);background:var(--s2);cursor:pointer;transition:all .15s;}
-.cbtn.on{border-color:#fff;background:rgba(255,255,255,.05);}
+.cbtn.on{border-color:var(--text);background:rgba(255,255,255,.05);}
 .cbtn-lb{font-size:8px;color:var(--t3);font-weight:700;text-align:center;}
-.cbtn.on .cbtn-lb{color:#fff;}
+.cbtn.on .cbtn-lb{color:var(--text);}
 
 /* ── NUMPAD ── */
 .npad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0;}
@@ -206,7 +206,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .txr:active{background:rgba(255,255,255,0.03);}
 .txic{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .txin{flex:1;min-width:0;}
-.txno{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}
+.txno{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
 .txsb{font-size:10px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
 .txam{font-size:14px;font-weight:800;font-family:var(--mono);}
 .abadge{font-size:8px;padding:2px 6px;border-radius:100px;background:rgba(255,255,255,0.04);color:var(--t2);font-weight:700;flex-shrink:0;border:1px solid rgba(255,255,255,0.03);}
@@ -225,7 +225,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   padding: 14px;
 }
 .slb{font-size:9px;color:var(--t3);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
-.sval{font-size:20px;font-weight:900;letter-spacing:-1px;font-family:var(--mono);color:#fff;}
+.sval{font-size:20px;font-weight:900;letter-spacing:-1px;font-family:var(--mono);color:var(--text);}
 
 /* ── RING ── */
 .rw{position:relative;flex-shrink:0;}
@@ -238,7 +238,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 
 /* ── FEATURE TAG ── */
 .ftag{font-size:9px;padding:2px 7px;border-radius:100px;font-weight:800;letter-spacing:.3px;}
-.ftag-p{background:rgba(255,255,255,0.08);color:#fff;}
+.ftag-p{background:rgba(255,255,255,0.08);color:var(--text);}
 .ftag-f{background:rgba(16,185,129,0.12);color:var(--green);}
 
 /* ── BUDGET ITEM ── */
@@ -1762,7 +1762,7 @@ function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
       {/* Theme Picker Selection Section */}
       <div className="sh"><div className="sh-t">🎨 Application Theme</div></div>
       <div className="au d1" style={{margin:"0 18px 14px",background:"rgba(255,255,255,0.03)",border:"1px solid var(--border)",borderRadius:16,padding:"13px 15px"}}>
-        <div style={{fontSize:12,fontWeight:800,color:"#fff",marginBottom:4}}>Select Theme Style</div>
+        <div style={{fontSize:12,fontWeight:800,color:"var(--text)",marginBottom:4}}>Select Theme Style</div>
         <div style={{fontSize:11,color:"var(--t2)",lineHeight:1.6}}>Switch between 10 carefully designed layouts in just 1 click.</div>
       </div>
       
@@ -1791,7 +1791,7 @@ function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
                 <div style={{width: 10, height: 10, borderRadius: '50%', background: t.red}}/>
               </div>
               <div style={{flex: 1}}>
-                <div style={{fontSize: 13, fontWeight: 700, color: '#fff'}}>{t.name}</div>
+                <div style={{fontSize: 13, fontWeight: 700, color: 'var(--text)'}}>{t.name}</div>
                 <div style={{fontSize: 10, color: 'var(--t2)', marginTop: 2}}>{t.desc}</div>
               </div>
               {isSelected && <span style={{fontSize: 14, color: 'var(--green)'}}>✓</span>}
