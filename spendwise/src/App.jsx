@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import {
   useAuth,
   useAccounts,
@@ -9,6 +9,7 @@ import {
   useWidgetConfig,
 } from './hooks/useSpendWise';
 import { supabase } from './supabaseClient';
+import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 
 // ─── GOOGLE FONTS + GLOBAL CSS ────────────────────────────────────────────────
 const G = `
@@ -151,8 +152,10 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   display:flex;align-items:flex-start;padding-top:10px;flex-shrink:0;z-index:20;position:relative;
 }
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding-top:2px;}
-.ni-ic{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;}
-.ni.active .ni-ic{background:rgba(255, 255, 255, 0.06);}
+.ni-ic{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;}
+.ni-ic > svg{position:relative;z-index:1;}
+.ni-pill{position:absolute;inset:0;border-radius:10px;background:rgba(255, 255, 255, 0.08);}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important;}}
 .ni-lb{font-size:9px;font-weight:700;color:var(--t3);letter-spacing:.4px;transition:color .2s;text-transform:uppercase;}
 .ni.active .ni-lb{color:var(--text);}
 
@@ -281,6 +284,10 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 /* ── PAGE HEADER ── */
 .ph{padding:12px 18px 8px;display:flex;align-items:center;justify-content:space-between;}
 .ph-t{font-size:28px;font-weight:900;letter-spacing:-1.2px;color:var(--text);}
+.hide-tg{width:44px;height:44px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;border:1px solid var(--border);background:var(--s1);color:var(--text);cursor:pointer;transition:background .15s,transform .1s;}
+.hide-tg:active{transform:scale(.94);}
+.hide-tg[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:transparent;}
+.hide-tg:focus-visible{outline:2px solid var(--indigo);outline-offset:2px;}
 .av{width:38px;height:38px;border-radius:13px;background:#27272A;
   display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;}
 
@@ -838,8 +845,29 @@ const ALL_WIDGETS = [
   {id:"bills_upcoming",name:"Upcoming Bills",desc:"Bills due in next 7 days",ic:"📅",def:false,tag:"extra"},
 ];
 
-const fmt = n => "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtK = n => n >= 1000 ? "$"+(n/1000).toFixed(1)+"k" : "$"+Number(n).toFixed(0);
+// ─── PRIVACY MODE ─────────────────────────────────────────────────────────────
+// When on, every amount formatted through fmt/fmtK is masked. App sets
+// HIDE_AMOUNTS during render, before children format their numbers.
+let HIDE_AMOUNTS = false;
+const MASK = "$•••••";
+const PrivacyCtx = createContext({ hide:false, toggle:()=>{} });
+
+function HideToggle(){
+  const { hide, toggle } = useContext(PrivacyCtx);
+  return (
+    <button onClick={toggle} className="hide-tg" aria-pressed={hide}
+      aria-label={hide ? "Show amounts" : "Hide amounts"} title={hide ? "Show amounts" : "Hide amounts"}>
+      {hide ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      )}
+    </button>
+  );
+}
+
+const fmt = n => HIDE_AMOUNTS ? MASK : "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtK = n => HIDE_AMOUNTS ? MASK : (n >= 1000 ? "$"+(n/1000).toFixed(1)+"k" : "$"+Number(n).toFixed(0));
 
 // ─── SVG RING ─────────────────────────────────────────────────────────────────
 function Ring({pct,color,size=96,stroke=8,children}){
@@ -1323,7 +1351,8 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div style={{fontSize:12,color:"var(--t2)",fontWeight:600}}>Good evening, Nisarg 👋</div>
           <div className="ph-t">Dashboard</div>
         </div>
-        <div style={{position:'relative'}}>
+        <div style={{position:'relative',display:'flex',alignItems:'center',gap:8}}>
+          <HideToggle/>
           <div className="av" onClick={() => setShowProfileMenu(!showProfileMenu)} style={{cursor:'pointer',background:'transparent',overflow:'hidden',padding:0}}>
             <img src="/logo.png" alt="SW" style={{width:'100%',height:'100%',borderRadius:13,objectFit:'cover'}}/>
           </div>
@@ -1652,7 +1681,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
                       whiteSpace: 'nowrap',
                       border: '1px solid var(--border2)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-                    }}>${Math.round(v)}</div>
+                    }}>{HIDE_AMOUNTS?"•••":"$"+Math.round(v)}</div>
 
                     <div className="spend-bar" style={{
                       width:"100%",
@@ -1889,7 +1918,10 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div className="ph-t">Accounts</div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <HideToggle/>
         <div onClick={onAddAcct} style={{padding:"7px 14px",background:"rgba(123,111,255,0.18)",borderRadius:12,fontSize:12,fontWeight:800,color:"#C4BEFF",cursor:"pointer"}}>+ Add</div>
+        </div>
       </div>
       <div className="au d1" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 18px 14px"}}>
         <div className="scell"><div className="slb">Total Assets</div><div className="sval" style={{color:"var(--green)",fontSize:18}}>{fmtK(totalAssets)}</div></div>
@@ -1982,6 +2014,7 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
       <div className="ph au">
         <div className="ph-t">Transactions</div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <HideToggle/>
           {showTax&&<span className="ftag ftag-p">TAX</span>}
           <div style={{fontSize:13,fontWeight:700,fontFamily:"var(--mono)",color:totalFiltered>=0?"var(--green)":"var(--red)"}}>{totalFiltered>=0?"+":""}{fmt(totalFiltered)}</div>
           <button onClick={()=>{ if(confirmClear){ setConfirmClear(false); onClearHistory(); } else { setConfirmClear(true); setTimeout(()=>setConfirmClear(false),3000); } }} style={{padding:"6px 12px",borderRadius:999,background:confirmClear?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:confirmClear?"var(--red)":"var(--text)",fontSize:12,cursor:"pointer"}}>{confirmClear?"Tap again to clear":"Clear History"}</button>
@@ -2075,7 +2108,10 @@ function BudgetScreen({transactions,budgets,onBudgetChange}){
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div className="ph-t">Budgets</div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <HideToggle/>
         <span className="pill" style={{background:overallPct>.8?"rgba(244,63,94,0.15)":"rgba(16,185,129,0.15)",color:overallPct>.8?"var(--red)":"var(--green)"}}>{Math.round(overallPct*100)}% used</span>
+        </div>
       </div>
 
       {/* Overall ring */}
@@ -3299,6 +3335,9 @@ export default function App(){
   const [payCcModal,setPayCcModal]=useState(null);
   const [time,setTime]=useState(new Date());
   const [moreSub,setMoreSub]=useState("reports");
+  const [hideAmounts,setHideAmounts]=useState(()=>{ try{ return localStorage.getItem('spendwise_hide')==='1'; }catch{ return false; } });
+  HIDE_AMOUNTS = hideAmounts;
+  const toggleHide = () => setHideAmounts(h => { const n=!h; try{ localStorage.setItem('spendwise_hide', n?'1':'0'); }catch{} return n; });
   const [showFabMenu,setShowFabMenu]=useState(false);
   const [transferModal,setTransferModal]=useState(false);
   const [editTxModal,setEditTxModal]=useState(null);
@@ -3565,6 +3604,8 @@ export default function App(){
   ];
 
   return (
+    <PrivacyCtx.Provider value={{hide:hideAmounts,toggle:toggleHide}}>
+    <MotionConfig reducedMotion="user">
     <div className="app-wrapper">
       <style>{G}</style>
       <style>{`
@@ -3602,7 +3643,7 @@ export default function App(){
           background: ${activeTheme.s1} !important;
           border-top-color: ${activeTheme.border} !important;
         }
-        .ni.active .ni-ic {
+        .ni-pill {
           background: ${activeTheme.id === "pearl_mint" || activeTheme.id === "sage_alabaster" ? "rgba(0,0,0,0.06)" : "rgba(255, 255, 255, 0.06)"} !important;
         }
       `}</style>
@@ -3615,13 +3656,17 @@ export default function App(){
 
         <div className="scr">
           <DynamicIslandGlow transactions={transactions} budgets={budgets} />
+          <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={tab}
+            initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
+            transition={{duration:0.2,ease:[0.16,1,0.3,1]}}>
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
           {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
           {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)} onClearHistory={handleClearHistory}/>}
           {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
           {tab==="more"&&(
             <div>
-              <div className="ph au"><div className="ph-t">More</div></div>
+              <div className="ph au"><div className="ph-t">More</div><HideToggle/></div>
               <div className="au d1 sel-row" style={{padding:"0 18px 12px"}}>
                 {[["reports","📊 Reports"],["customize","🎨 Customize"],["settings","⚙️ Settings"]].map(([v,l])=>(
                   <div key={v} className={`chip ${moreSub===v?"on":""}`} onClick={()=>setMoreSub(v)}>{l}</div>
@@ -3633,11 +3678,17 @@ export default function App(){
               {moreSub==="customize"&&<CustomizeScreen widgets={widgets} onToggle={toggleWidget} currentThemeId={themeId} onSelectTheme={handleSelectTheme}/>}
             </div>
           )}
+          </motion.div>
+          </AnimatePresence>
         </div>
 
         {showFabMenu && <div style={{position:'absolute',inset:0,zIndex:49}} onClick={() => setShowFabMenu(false)}/>}
+        <AnimatePresence>
         {showFabMenu && (
-          <div style={{position:'absolute',bottom:152,right:16,zIndex:55,background:'var(--s1)',border:'1px solid var(--border2)',borderRadius:20,padding:8,boxShadow:'0 12px 40px rgba(0,0,0,0.7)',minWidth:190,animation:'slideUp .25s cubic-bezier(0.34,1.56,0.64,1)'}}>
+          <motion.div key="fab-menu"
+            initial={{opacity:0,scale:0.9,y:12}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:0.95,y:8}}
+            transition={{type:"spring",stiffness:420,damping:32}}
+            style={{position:'absolute',bottom:152,right:16,zIndex:55,background:'var(--s1)',border:'1px solid var(--border2)',borderRadius:20,padding:8,boxShadow:'0 12px 40px rgba(0,0,0,0.7)',minWidth:190,transformOrigin:'bottom right'}}>
             <div onClick={() => {setShowAddTx(true);setShowFabMenu(false);}} style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,cursor:'pointer'}}>
               <span style={{fontSize:18}}>💰</span>
               <div><div style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>Add Transaction</div><div style={{fontSize:10,color:'var(--t2)'}}>Income or expense</div></div>
@@ -3647,8 +3698,9 @@ export default function App(){
               <span style={{fontSize:18}}>🔄</span>
               <div><div style={{fontSize:13,fontWeight:700,color:'var(--text)'}}>Transfer Funds</div><div style={{fontSize:10,color:'var(--t2)'}}>Between bank accounts</div></div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
         <div className="fab" onClick={() => setShowFabMenu(!showFabMenu)} style={showFabMenu ? {background:'linear-gradient(135deg,#F43F5E,#E11D48)',transform:'rotate(45deg)'} : {}}>＋</div>
 
         <div className="bnav">
@@ -3656,10 +3708,15 @@ export default function App(){
             const isActive = tab===t.id;
             const iconColor = isActive ? activeTheme.indigo : activeTheme.t3;
             return (
-              <div key={t.id} className={`ni ${isActive?"active":""}`} onClick={()=>{setTab(t.id);setShowFabMenu(false);}}>
-                <div className="ni-ic">{navIcons[t.key](iconColor)}</div>
+              <motion.div key={t.id} className={`ni ${isActive?"active":""}`} onClick={()=>{setTab(t.id);setShowFabMenu(false);}}
+                whileTap={{scale:0.92}} transition={{type:"spring",stiffness:600,damping:30}}
+                role="button" aria-label={t.lb} aria-current={isActive?"page":undefined}>
+                <div className="ni-ic">
+                  {isActive&&<motion.div layoutId="nav-pill" className="ni-pill" transition={{type:"spring",stiffness:500,damping:38}}/>}
+                  {navIcons[t.key](iconColor)}
+                </div>
                 <div className="ni-lb" style={isActive ? {color: activeTheme.indigo} : {}}>{t.lb}</div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -3671,5 +3728,7 @@ export default function App(){
         {editTxModal&&<EditTxModal tx={editTxModal} accounts={uiAccounts} onClose={()=>setEditTxModal(null)} onSave={handleEditTx} onDelete={handleDeleteTx}/>}
       </div>
     </div>
+    </MotionConfig>
+    </PrivacyCtx.Provider>
   );
 }

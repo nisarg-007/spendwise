@@ -70,6 +70,9 @@ Only the essentials are on by default, so a fresh dashboard stays clean. Turn ex
 - **Reports** — category breakdowns and trends.
 - **History filters** — by type, account and search text, plus a tax-deductible view.
 
+### Privacy mode
+Tap the **eye button** at the top of Home, Accounts, History, Budget or More to hide every dollar amount (`$•••••`). It's safe to open the app in public. Tap again to show amounts. Your choice is remembered on this device. Percentages and the health score stay visible; they don't reveal amounts.
+
 ### Navigation
 
 | Tab | What's there |
@@ -83,6 +86,7 @@ Only the essentials are on by default, so a fresh dashboard stays clean. Turn ex
 ### Experience
 - iPhone 16 Pro–style layout with a **Dynamic Island ambient glow** that reacts to your spending.
 - **10 themes**, switchable in one tap and remembered per device.
+- Smooth tab transitions, sliding nav indicator and spring pop-up menu built with [Motion](https://motion.dev) (`motion` package). All motion respects the system **Reduce Motion** setting.
 - Animated numbers, scroll-reveal timelines, horizontal snap scrolling, frosted-glass surfaces.
 - Phone-frame preview on desktop; full-screen on mobile.
 
@@ -93,6 +97,7 @@ Only the essentials are on by default, so a fresh dashboard stays clean. Turn ex
 | Layer | Technology |
 |---|---|
 | UI | React 19 (function components + hooks), Create React App 5 |
+| Animation | [Motion](https://motion.dev) (`motion/react`) — tab transitions, nav indicator, menus |
 | Styling | Plain CSS-in-JS template strings with CSS custom properties for themes |
 | Data | Supabase (PostgreSQL) via `@supabase/supabase-js` v2 |
 | Auth | Supabase Auth (email/password) |
