@@ -1069,7 +1069,7 @@ function DynamicIslandGlow({ transactions, budgets }) {
       <div className="di-status-bar">
         <div className="di-status-dot" style={{ background: dotColor }} />
         <span className="di-status-text">
-          Today ${todaySpend > 0 ? fmtK(todaySpend) : "$0"}
+          Today {fmtK(todaySpend)}
         </span>
         <div className="di-status-divider" />
         <span className="di-status-text">
