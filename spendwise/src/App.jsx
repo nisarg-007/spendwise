@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
 import {
   useAuth,
   useAccounts,
@@ -191,7 +191,6 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   height: 80px;
   border-radius: 0 0 110px 110px;
   opacity: 0.45;
-  animation: diGlowBreathe 4s ease-in-out infinite;
   filter: blur(28px);
   pointer-events: none;
 }
@@ -209,7 +208,6 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   border-radius: 0 0 70px 70px;
   opacity: 0.22;
   filter: blur(8px);
-  animation: diRingPulse 3s ease-in-out infinite 0.5s;
   pointer-events: none;
 }
 @keyframes diRingPulse {
@@ -247,6 +245,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   opacity: 0.4;
 }
 .di-particles {
+  display: none;
   position: absolute;
   top: 0;
   left: 50%;
@@ -321,7 +320,8 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .ov{position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:flex-end;}
 .sheet{
   width:100%;
-  background: #18181B;
+  background: var(--s1);
+  color: var(--text);
   border-radius: 28px 28px 0 0;
   padding: 16px 18px 36px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -336,7 +336,8 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 
 .inp{
   width:100%;
-  background: #09090B;
+  background: var(--bg);
+  color: var(--text);
   border: 1.5px solid var(--border);
   border-radius: var(--r14);
   padding: 12px 14px;
@@ -347,7 +348,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
   transition: all .2s;
   margin-bottom: 10px;
 }
-.inp:focus{border-color:var(--indigo);background:rgba(255,255,255,0.02);}
+.inp:focus{border-color:var(--indigo);}
 .inp::placeholder{color:var(--t3);}
 .ilb{font-size:10px;font-weight:800;color:var(--t2);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
 
@@ -360,7 +361,7 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .btn-del{width:100%;padding:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.18);
   border-radius:var(--r14);color:var(--red);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;}
 
-.ttog{display:flex;background:#09090B;border-radius:var(--r14);padding:4px;margin-bottom:12px;border:1px solid var(--border);}
+.ttog{display:flex;background:var(--bg);border-radius:var(--r14);padding:4px;margin-bottom:12px;border:1px solid var(--border);}
 .tbtn{flex:1;padding:10px;border-radius:11px;border:none;background:transparent;color:var(--t3);
   font-family:var(--font);font-size:12px;font-weight:800;cursor:pointer;transition:all .2s;}
 .tbtn.ae{background:rgba(239,68,68,.12);color:var(--red);}
@@ -427,30 +428,10 @@ body{background:var(--bg);font-family:var(--font);color:var(--text);overflow:hid
 .ri{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 
 /* ── ANIMATIONS ── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.au{animation:fadeUp .38s ease both;}
-.d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}.d5{animation-delay:.25s}.d6{animation-delay:.3s}
-
-@keyframes scrollReveal {
-  from {
-    opacity: 0.1;
-    transform: translateY(35px) scale(0.96);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-@supports (animation-timeline: view()) {
-  .au {
-    animation: scrollReveal linear both !important;
-    animation-timeline: view() !important;
-    animation-range: entry 2% cover 25% !important;
-  }
-}
+/* Page entrance is handled by Motion (tab transition). Sections no longer
+   animate individually: the old scroll-driven reveal faded/blurred cards that
+   were on screen, which read as flicker on iPhone. */
+.au{}
 
 /* ── FEATURE TAG ── */
 .ftag{font-size:9px;padding:2px 7px;border-radius:100px;font-weight:800;letter-spacing:.3px;}
@@ -845,6 +826,30 @@ const ALL_WIDGETS = [
   {id:"bills_upcoming",name:"Upcoming Bills",desc:"Bills due in next 7 days",ic:"📅",def:false,tag:"extra"},
 ];
 
+// ─── DATES ────────────────────────────────────────────────────────────────────
+// Transactions store plain 'YYYY-MM-DD' dates. Always build and read them in
+// the device's local time zone — toISOString()/new Date('YYYY-MM-DD') use UTC,
+// which shifts the day by one in the US evening.
+const localISODate = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const parseLocalDate = (str) => {
+  if (!str) return new Date(NaN);
+  const [y, m, d] = String(str).slice(0,10).split("-").map(Number);
+  return new Date(y, (m||1) - 1, d||1);
+};
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
+const isTransferTx = t => !!(t.tags && t.tags.includes('__transfer__'));
+// Newest first: by date, then by creation time.
+const byNewest = (a, b) => (b.date||"").localeCompare(a.date||"") || String(b.createdAt||b.created_at||"").localeCompare(String(a.createdAt||a.created_at||""));
+
+// Desktop phone-frame clock. Own component so the whole app doesn't
+// re-render every second.
+function StatusClock(){
+  const [t,setT]=useState(()=>new Date());
+  useEffect(()=>{ const id=setInterval(()=>setT(new Date()),15000); return ()=>clearInterval(id); },[]);
+  return <>{t.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:false})}</>;
+}
+
 // ─── PRIVACY MODE ─────────────────────────────────────────────────────────────
 // When on, every amount formatted through fmt/fmtK is masked. App sets
 // HIDE_AMOUNTS during render, before children format their numbers.
@@ -949,7 +954,7 @@ function calculateFinancialHealthScore({ accounts = [], transactions = [], budge
   const currentYear = now.getFullYear();
   const monthExpenses = transactions.filter(t => {
     if (t.type !== "expense" || (t.tags && t.tags.includes('__transfer__'))) return false;
-    const txDate = new Date(t.date);
+    const txDate = parseLocalDate(t.date);
     return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
   }).reduce((s, t) => s + t.amount, 0);
   
@@ -1018,7 +1023,7 @@ function calculateFinancialHealthScore({ accounts = [], transactions = [], budge
 // ─── DYNAMIC ISLAND AMBIENT GLOW (mobile PWA) ────────────────────────────────
 function DynamicIslandGlow({ transactions, budgets }) {
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = localISODate(now);
   const todaySpend = transactions
     .filter(t => t.type === "expense" && t.date === todayStr && !(t.tags && t.tags.includes('__transfer__')))
     .reduce((s, t) => s + t.amount, 0);
@@ -1026,7 +1031,7 @@ function DynamicIslandGlow({ transactions, budgets }) {
   const monthExpenses = transactions
     .filter(t => {
       if (t.type !== "expense" || (t.tags && t.tags.includes('__transfer__'))) return false;
-      const d = new Date(t.date);
+      const d = parseLocalDate(t.date);
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
     })
     .reduce((s, t) => s + t.amount, 0);
@@ -1274,7 +1279,10 @@ function HealthScoreModal({ health, onClose }) {
 function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets,onEditAcct,onAddAcct,setTab,onSignOut,onPayBill}){
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showHealthScore, setShowHealthScore] = useState(false);
-  const health = calculateFinancialHealthScore({ accounts, transactions, budgets, savings });
+  // "This month" = calendar month in local time, transfers & card payments excluded.
+  const nowD = new Date();
+  const monthTx = transactions.filter(t => { const d = parseLocalDate(t.date); return d.getMonth()===nowD.getMonth() && d.getFullYear()===nowD.getFullYear() && !isTransferTx(t); });
+  const health = calculateFinancialHealthScore({ accounts, transactions: monthTx, budgets, savings });
   const banks = accounts.filter(a=>a.type==="bank");
   const ccs = accounts.filter(a=>a.type==="credit");
   const totalBank = banks.reduce((s,a)=>s+a.balance,0);
@@ -1283,8 +1291,8 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
   const netWorth = totalBank - totalCC;
   const ccUtil = totalCCLimit>0 ? totalCC/totalCCLimit : 0;
 
-  const income = transactions.filter(t=>t.type==="income" && !(t.tags&&t.tags.includes('__transfer__'))).reduce((s,t)=>s+t.amount,0);
-  const expense = transactions.filter(t=>t.type==="expense" && !(t.tags&&t.tags.includes('__transfer__'))).reduce((s,t)=>s+t.amount,0);
+  const income = monthTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+  const expense = monthTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
   const savingsRate = income>0 ? Math.round(((income-expense)/income)*100) : 0;
 
   const taxDeductible = transactions.filter(t=>t.taxDeductible&&t.type==="expense").reduce((s,t)=>s+t.amount,0);
@@ -1296,23 +1304,19 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const currentDay = now.getDate();
 
-  const monthExpenses = transactions.filter(t => {
-    if (t.type !== "expense") return false;
-    const txDate = new Date(t.date);
-    return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
-  }).reduce((s,t) => s + t.amount, 0);
+  const monthExpenses = expense;
 
   const dailyBurn = currentDay > 0 ? monthExpenses / currentDay : 0;
   const projectedSpend = dailyBurn * daysInMonth;
   const totalBudgetLimit = Object.values(budgets || {}).reduce((s, v) => s + v, 0);
 
-  const recent = [...transactions].sort((a,b)=>b.id-a.id).slice(0,5);
+  const recent = [...transactions].sort(byNewest).slice(0,5);
 
   // Real weekly spend — last 7 days from actual transactions
   const today = new Date();
   const weekBars = Array.from({length:7},(_,i)=>{
     const d = new Date(today); d.setDate(d.getDate() - (6-i));
-    const dStr = d.toISOString().slice(0,10);
+    const dStr = localISODate(d);
     return transactions.filter(t=>t.type==="expense" && !(t.tags&&t.tags.includes('__transfer__')) && t.date===dStr).reduce((s,t)=>s+t.amount,0);
   });
   const wMax = Math.max(...weekBars,1);
@@ -1320,7 +1324,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
 
   // Upcoming bills (next 7 days)
   const upcomingBills = subscriptions.filter(s=>{
-    const due = new Date(s.nextDue), now = new Date();
+    const due = parseLocalDate(s.nextDue), now = new Date();
     const diff = (due-now)/(1000*60*60*24);
     return diff>=0 && diff<=7;
   });
@@ -1331,7 +1335,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
     const weekStart = new Date(weekEnd); weekStart.setDate(weekStart.getDate() - 7);
     const wkTx = transactions.filter(t => {
       if (t.tags && t.tags.includes('__transfer__')) return false;
-      const d = new Date(t.date);
+      const d = parseLocalDate(t.date);
       return d >= weekStart && d < weekEnd;
     });
     return {
@@ -1348,7 +1352,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div>
-          <div style={{fontSize:12,color:"var(--t2)",fontWeight:600}}>Good evening, Nisarg 👋</div>
+          <div style={{fontSize:12,color:"var(--t2)",fontWeight:600}}>{greeting()}, Nisarg 👋</div>
           <div className="ph-t">Dashboard</div>
         </div>
         <div style={{position:'relative',display:'flex',alignItems:'center',gap:8}}>
@@ -1536,7 +1540,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
                   </div>
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
-                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'#C4BEFF',border:'none',padding:'5px 12px',borderRadius:8,fontSize:10,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
+                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'var(--indigo)',border:'none',padding:'5px 12px',borderRadius:8,fontSize:10,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
                 </div>
               </div>
             );
@@ -1568,12 +1572,12 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
               <div>
                 <div className="slb">Daily Avg</div>
-                <div className="sval" style={{color: 'var(--text)'}}>{fmtK(expense/28)}</div>
+                <div className="sval" style={{color: 'var(--text)'}}>{fmtK(dailyBurn)}</div>
               </div>
               <div style={{width: 32, height: 32, borderRadius: '50%', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14}}>⚡</div>
             </div>
             <div style={{display:'flex', alignItems:'center', gap: 4, marginTop: 12}}>
-              <span style={{fontSize: 9, color: 'var(--t2)'}}>Burn rate over 28 days</span>
+              <span style={{fontSize: 9, color: 'var(--t2)'}}>Average per day this month</span>
             </div>
           </div>
 
@@ -1586,7 +1590,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
               </div>
               <div style={{width: 30, height: 30, borderRadius: 10, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--green)', fontSize: 13}}>▲</div>
             </div>
-            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>From salary & other sources</div>
+            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>This month</div>
           </div>
 
           {/* Expenses Card */}
@@ -1598,7 +1602,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
               </div>
               <div style={{width: 30, height: 30, borderRadius: 10, background: 'rgba(244, 63, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', fontSize: 13}}>▼</div>
             </div>
-            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>Total outflows recorded</div>
+            <div style={{fontSize: 9, color: 'var(--t2)', marginTop: 12}}>This month, excl. transfers</div>
           </div>
 
         </div>
@@ -1785,7 +1789,7 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
                 <div style={{width:36,height:36,borderRadius:11,background:s.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>{s.icon}</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700}}>{s.name}</div>
-                  <div style={{fontSize:10,color:"var(--t2)"}}>{s.cycle} · next {new Date(s.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>
+                  <div style={{fontSize:10,color:"var(--t2)"}}>{s.cycle} · next {parseLocalDate(s.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>
                 </div>
                 <div style={{fontSize:13,fontWeight:800,fontFamily:"var(--mono)",color:"var(--text)"}}>{fmt(s.amount)}</div>
               </div>
@@ -1920,18 +1924,18 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
         <div className="ph-t">Accounts</div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
         <HideToggle/>
-        <div onClick={onAddAcct} style={{padding:"7px 14px",background:"rgba(123,111,255,0.18)",borderRadius:12,fontSize:12,fontWeight:800,color:"#C4BEFF",cursor:"pointer"}}>+ Add</div>
+        <div onClick={onAddAcct} style={{padding:"7px 14px",background:"rgba(123,111,255,0.18)",borderRadius:12,fontSize:12,fontWeight:800,color:"var(--indigo)",cursor:"pointer"}}>+ Add</div>
         </div>
       </div>
       <div className="au d1" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,padding:"0 18px 14px"}}>
         <div className="scell"><div className="slb">Total Assets</div><div className="sval" style={{color:"var(--green)",fontSize:18}}>{fmtK(totalAssets)}</div></div>
         <div className="scell"><div className="slb">Total Debt</div><div className="sval" style={{color:"var(--red)",fontSize:18}}>{fmtK(totalDebt)}</div></div>
-        <div className="scell" style={{gridColumn:"span 2"}}><div className="slb">Net Worth</div><div className="sval" style={{color:"#C4BEFF"}}>{fmt(totalAssets-totalDebt)}</div></div>
+        <div className="scell" style={{gridColumn:"span 2"}}><div className="slb">Net Worth</div><div className="sval" style={{color:"var(--indigo)"}}>{fmt(totalAssets-totalDebt)}</div></div>
       </div>
       <div className="au d2">
         <div className="sh"><div className="sh-t">🏦 Bank Accounts ({banks.length})</div></div>
         {banks.map(a=>{
-          const lastTx=[...transactions].filter(t=>t.accountId===a.id).sort((x,y)=>y.id-x.id)[0];
+          const lastTx=[...transactions].filter(t=>t.accountId===a.id).sort(byNewest)[0];
           return (
             <div key={a.id} style={{margin:"0 18px 10px",borderRadius:18,overflow:'visible',cursor:"pointer"}}>
               <div onClick={()=>onEditAcct(a)} style={{background:BANK_THEMES[a.themeIdx||0],padding:"16px 18px",position:"relative",borderRadius:18}}>
@@ -1976,7 +1980,7 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
                 <div className="pt" style={{height:6}}><div className="pf" style={{width:`${p*100}%`,background:p>.8?"var(--red)":p>.5?"var(--amber)":"var(--cyan)"}}/></div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginTop:6}}>
                   <div style={{fontSize:10,color:"var(--t2)"}}>Limit {fmt(cc.limit)} · {p<.3?"✅ Great score impact":"⚠️ Keep below 30%"}</div>
-                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'#C4BEFF',border:'none',padding:'6px 14px',borderRadius:8,fontSize:11,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
+                  <button onClick={(e)=>{e.stopPropagation();onPayBill(cc);}} style={{background:'rgba(123,111,255,0.18)',color:'var(--indigo)',border:'none',padding:'6px 14px',borderRadius:8,fontSize:11,fontWeight:800,cursor:'pointer'}}>Pay Bill</button>
                 </div>
               </div>
             </div>
@@ -2003,7 +2007,7 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
   if(showTax) filtered=filtered.filter(t=>t.taxDeductible);
   if(search) filtered=filtered.filter(t=>t.note.toLowerCase().includes(search.toLowerCase()));
 
-  const sorted=[...filtered].sort((a,b)=>b.id-a.id);
+  const sorted=[...filtered].sort(byNewest);
   const grouped={};
   sorted.forEach(tx=>{if(!grouped[tx.date])grouped[tx.date]=[];grouped[tx.date].push(tx);});
 
@@ -2012,13 +2016,16 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
   return (
     <div style={{paddingBottom:20}}>
       <div className="ph au">
-        <div className="ph-t">Transactions</div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <HideToggle/>
+        <div className="ph-t">History</div>
+        <HideToggle/>
+      </div>
+      <div className="au" style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"0 18px 10px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:11,color:"var(--t2)",fontWeight:700}}>Net</span>
+          <span style={{fontSize:14,fontWeight:800,fontFamily:"var(--mono)",color:totalFiltered>=0?"var(--green)":"var(--red)"}}>{totalFiltered>=0?"+":""}{fmt(totalFiltered)}</span>
           {showTax&&<span className="ftag ftag-p">TAX</span>}
-          <div style={{fontSize:13,fontWeight:700,fontFamily:"var(--mono)",color:totalFiltered>=0?"var(--green)":"var(--red)"}}>{totalFiltered>=0?"+":""}{fmt(totalFiltered)}</div>
-          <button onClick={()=>{ if(confirmClear){ setConfirmClear(false); onClearHistory(); } else { setConfirmClear(true); setTimeout(()=>setConfirmClear(false),3000); } }} style={{padding:"6px 12px",borderRadius:999,background:confirmClear?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:confirmClear?"var(--red)":"var(--text)",fontSize:12,cursor:"pointer"}}>{confirmClear?"Tap again to clear":"Clear History"}</button>
         </div>
+        <button onClick={()=>{ if(confirmClear){ setConfirmClear(false); onClearHistory(); } else { setConfirmClear(true); setTimeout(()=>setConfirmClear(false),3000); } }} style={{minHeight:36,padding:"6px 12px",borderRadius:999,background:confirmClear?"rgba(239,68,68,0.15)":"var(--s2)",border:"1px solid var(--border)",color:confirmClear?"var(--red)":"var(--t2)",fontSize:12,fontWeight:700,cursor:"pointer"}}>{confirmClear?"Tap again to clear":"Clear History"}</button>
       </div>
 
       {/* Search */}
@@ -2088,7 +2095,8 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
 
 // ─── BUDGET SCREEN ────────────────────────────────────────────────────────────
 function BudgetScreen({transactions,budgets,onBudgetChange}){
-  const expenses=transactions.filter(t=>t.type==="expense");
+  const nowB = new Date();
+  const expenses=transactions.filter(t=>{ if(t.type!=="expense"||isTransferTx(t)) return false; const d=parseLocalDate(t.date); return d.getMonth()===nowB.getMonth()&&d.getFullYear()===nowB.getFullYear(); });
   const [editing,setEditing]=useState(null);
   const [editVal,setEditVal]=useState("");
 
@@ -2101,7 +2109,8 @@ function BudgetScreen({transactions,budgets,onBudgetChange}){
   }).filter(c=>c.budget>0||c.spent>0);
 
   const totalBudget=catData.reduce((s,c)=>s+c.budget,0);
-  const totalSpent=catData.reduce((s,c)=>s+c.spent,0);
+  // Compare spending only in categories that have a budget.
+  const totalSpent=catData.filter(c=>c.budget>0).reduce((s,c)=>s+c.spent,0);
   const overallPct=totalBudget>0?totalSpent/totalBudget:0;
 
   return (
@@ -2151,7 +2160,7 @@ function BudgetScreen({transactions,budgets,onBudgetChange}){
                   autoFocus/>
               ):(
                 <div onClick={()=>{setEditing(c.id);setEditVal(String(c.budget));}} style={{fontSize:12,color:"var(--t2)",fontFamily:"var(--mono)",cursor:"pointer",borderBottom:"1px dashed var(--t3)",paddingBottom:1}}>
-                  {fmt(c.spent)} / {fmt(c.budget)}
+                  {fmt(c.spent)} / {c.budget>0 ? fmt(c.budget) : "set budget"}
                 </div>
               )}
             </div>
@@ -2199,14 +2208,14 @@ function SubsScreen({subscriptions,setSubscriptions}){
 
       <div className="au d2" style={{padding:"0 18px",display:"flex",flexDirection:"column",gap:8}}>
         {subscriptions.map(s=>{
-          const due=new Date(s.nextDue),now=new Date();
+          const due=parseLocalDate(s.nextDue),now=new Date();
           const days=Math.ceil((due-now)/(1000*60*60*24));
           return (
             <div key={s.id} style={{display:"flex",alignItems:"center",gap:12,background:"var(--s2)",border:"1px solid var(--border)",borderRadius:16,padding:"13px 14px"}}>
               <div style={{width:42,height:42,borderRadius:14,background:s.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>{s.icon}</div>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700}}>{s.name}</div>
-                <div style={{fontSize:10,color:"var(--t2)",marginTop:2}}>{s.cycle} · next {new Date(s.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})} {days<=3&&<span style={{color:"var(--red)",fontWeight:700}}>({days}d)</span>}</div>
+                <div style={{fontSize:10,color:"var(--t2)",marginTop:2}}>{s.cycle} · next {parseLocalDate(s.nextDue).toLocaleDateString("en-US",{month:"short",day:"numeric"})} {days<=3&&<span style={{color:"var(--red)",fontWeight:700}}>({days}d)</span>}</div>
               </div>
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:14,fontWeight:800,fontFamily:"var(--mono)"}}>{fmt(s.amount)}</div>
@@ -2250,7 +2259,13 @@ function ReportsScreen({transactions,accounts}){
   const [period,setPeriod]=useState("month");
   // Exclude internal transfers from all report calculations
   const isTransfer = t => t.tags && t.tags.includes('__transfer__');
-  const realTx = transactions.filter(t => !isTransfer(t));
+  const now = new Date();
+  const periodStart = period==="week" ? new Date(now.getFullYear(), now.getMonth(), now.getDate()-6)
+    : period==="month" ? new Date(now.getFullYear(), now.getMonth(), 1)
+    : period==="quarter" ? new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1)
+    : new Date(now.getFullYear(), 0, 1);
+  const allReal = transactions.filter(t => !isTransfer(t));
+  const realTx = allReal.filter(t => parseLocalDate(t.date) >= periodStart);
   const expenses=realTx.filter(t=>t.type==="expense");
   const income=realTx.filter(t=>t.type==="income");
   const totalExp=expenses.reduce((s,t)=>s+t.amount,0);
@@ -2273,7 +2288,7 @@ function ReportsScreen({transactions,accounts}){
     const m = d.getMonth(), y = d.getFullYear();
     const mTx = transactions.filter(t => {
       if (t.tags && t.tags.includes('__transfer__')) return false;
-      const td = new Date(t.date);
+      const td = parseLocalDate(t.date);
       return td.getMonth()===m && td.getFullYear()===y;
     });
     return {
@@ -2526,6 +2541,7 @@ function SettingsScreen({accounts,txCount,onReset}){
 // ─── ACCOUNT MODAL ────────────────────────────────────────────────────────────
 function AcctModal({account,onClose,onSave,onDelete}){
   const isEdit=!!account;
+  const [confirmDel,setConfirmDel]=useState(false);
   const [type,setType]=useState(account?.type||"bank");
   const [name,setName]=useState(account?.name||"");
   const [bank,setBank]=useState(account?.bank||"");
@@ -2588,7 +2604,7 @@ function AcctModal({account,onClose,onSave,onDelete}){
           ))}
         </div>
         <button className="btn-p" onClick={doSave}>{isEdit?"Save Changes":"Add Account"}</button>
-        {isEdit&&<button className="btn-del" onClick={()=>{onDelete(account.id);onClose();}}>Delete Account</button>}
+        {isEdit&&<button className="btn-del" onClick={()=>{ if(!confirmDel){ setConfirmDel(true); return; } onDelete(account.id); onClose(); }}>{confirmDel?"Tap again to delete this account":"Delete Account"}</button>}
       </div>
     </div>
   );
@@ -2597,7 +2613,8 @@ function AcctModal({account,onClose,onSave,onDelete}){
 // ─── PAY CREDIT CARD MODAL ───────────────────────────────────────────────────
 function PayCCModal({ accounts, creditCard, onClose, onPay }) {
   const [bankId, setBankId] = useState("");
-  const [amount, setAmount] = useState(creditCard.balance.toString());
+  const owed = Math.max(0, Number(creditCard.balance) || 0);
+  const [amount, setAmount] = useState(owed > 0 ? String(owed) : "");
 
   const banks = accounts.filter(a => a.type === "bank" && a.balance > 0);
 
@@ -2612,9 +2629,14 @@ function PayCCModal({ accounts, creditCard, onClose, onPay }) {
     setAmount(a=>a+v);
   };
 
+  const val = parseFloat(amount) || 0;
+  const bankBal = banks.find(b => b.id === bankId)?.balance ?? 0;
+  const payError = val <= 0 ? "Enter an amount"
+    : val > owed + 0.005 ? `More than the ${fmt(owed)} owed`
+    : val > bankBal + 0.005 ? "More than this bank's balance" : "";
+
   const doPay = () => {
-    const val = parseFloat(amount);
-    if (!val || val <= 0 || !bankId) return;
+    if (payError || !bankId) return;
     onPay({ bankId, ccId: creditCard.id, amount: val });
     onClose();
   };
@@ -2637,7 +2659,7 @@ function PayCCModal({ accounts, creditCard, onClose, onPay }) {
         <div className="hdl"/>
         <div className="st">Pay Credit Card</div>
         <div style={{textAlign:'center', fontSize:14, color:'var(--t2)', marginBottom:10}}>
-          Paying {creditCard.name} (Due: ${creditCard.balance})
+          Paying {creditCard.name} · Owed {fmt(owed)}
         </div>
         <div className="amtd">
           <span style={{color:"var(--green)"}}>${amount||"0"}</span>
@@ -2651,7 +2673,7 @@ function PayCCModal({ accounts, creditCard, onClose, onPay }) {
         <div className="sel-row" style={{marginBottom:15}}>
           {banks.map(a=><div key={a.id} className={`chip ${bankId===a.id?"on":""}`} onClick={()=>setBankId(a.id)}>{a.icon} {a.name}</div>)}
         </div>
-        <button className="btn-p" onClick={doPay}>Pay ${amount||"0"} to CC</button>
+        <button className="btn-p" onClick={doPay} disabled={!!payError} style={{opacity:payError?0.5:1}}>{payError || `Pay $${amount||"0"} to CC`}</button>
       </div>
     </div>
   );
@@ -2667,7 +2689,7 @@ function AddTxModal({accounts,onClose,onAdd}){
   const [recurring,setRecurring]=useState(false);
   const [taxDed,setTaxDed]=useState(false);
   const [tags,setTags]=useState("");
-  const [date,setDate]=useState(new Date().toISOString().slice(0,10));
+  const [date,setDate]=useState(localISODate());
   const [autoDetected,setAutoDetected]=useState(false);
   
   // Splits State
@@ -2788,7 +2810,7 @@ function AddTxModal({accounts,onClose,onAdd}){
         <div style={{display:'flex',gap:10}}>
           <div style={{flex:1}}>
             <div className="ilb">Date</div>
-            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={new Date().toISOString().slice(0,10)} onChange={e=>setDate(e.target.value)}/>
+            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={localISODate()} onChange={e=>setDate(e.target.value)}/>
           </div>
           <div style={{flex:2}}>
             <div className="ilb">Note</div>
@@ -3066,7 +3088,8 @@ function TransferModal({accounts, onClose, onTransfer}) {
           {banks.filter(a => a.id !== fromId).map(a => <div key={a.id} className={`chip ${effectiveToId===a.id?"on":""}`} onClick={() => setToId(a.id)}>{a.icon} {a.name}</div>)}
         </div>
 
-        <button className="btn-p" style={{background:'linear-gradient(135deg,#22D3EE,#0EA5E9)'}} onClick={doTransfer}>Transfer ${amount || "0"}</button>
+        {(() => { const v=parseFloat(amount)||0; const f=banks.find(x=>x.id===fromId); const err = fromId&&fromId===toId ? "Pick two different accounts" : f&&v>f.balance+0.005 ? "More than this account's balance" : "";
+          return <button className="btn-p" disabled={!!err} style={{background:'linear-gradient(135deg,#22D3EE,#0EA5E9)',opacity:err?0.5:1}} onClick={doTransfer}>{err || `Transfer $${amount || "0"}`}</button>; })()}
         <button className="btn-s" onClick={onClose}>Cancel</button>
       </div>
     </div>
@@ -3083,7 +3106,7 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
   const [recurring, setRecurring] = useState(tx.recurring || false);
   const [taxDed, setTaxDed] = useState(tx.taxDeductible || tx.tax_deductible || false);
   const [tags, setTags] = useState((tx.tags || []).join(", "));
-  const [date, setDate] = useState((tx.date || new Date().toISOString()).slice(0,10));
+  const [date, setDate] = useState((tx.date || localISODate()).slice(0,10));
   const [confirmDel, setConfirmDel] = useState(false);
 
   const isSplit = tx.tags?.some(t => t.startsWith('split_'));
@@ -3161,7 +3184,7 @@ function EditTxModal({tx, accounts, onClose, onSave, onDelete}) {
         <div style={{display:'flex',gap:10}}>
           <div style={{flex:1}}>
             <div className="ilb">Date</div>
-            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={new Date().toISOString().slice(0,10)} onChange={e=>setDate(e.target.value)}/>
+            <input type="date" className="inp" style={{colorScheme:'dark'}} value={date} max={localISODate()} onChange={e=>setDate(e.target.value)}/>
           </div>
           <div style={{flex:2}}>
             <div className="ilb">Note</div>
@@ -3319,7 +3342,7 @@ function LoadingScreen() {
 export default function App(){
   const { user, loading: authLoading, signOut } = useAuth();
   const uid = user?.id;
-  const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
+  const { accounts, addAccount, updateAccount, adjustBalance, deleteAccount } = useAccounts(uid);
   const { transactions, addTransaction, updateTransaction, deleteTransaction, clearTransactions } = useTransactions(uid);
   const { budgets, setBudget }                                  = useBudgets(uid);
   const { savings }                                             = useSavingsGoals(uid);
@@ -3333,12 +3356,16 @@ export default function App(){
   const [showAddTx,setShowAddTx]=useState(false);
   const [acctModal,setAcctModal]=useState(null);
   const [payCcModal,setPayCcModal]=useState(null);
-  const [time,setTime]=useState(new Date());
   const [moreSub,setMoreSub]=useState("reports");
   const [hideAmounts,setHideAmounts]=useState(()=>{ try{ return localStorage.getItem('spendwise_hide')==='1'; }catch{ return false; } });
   HIDE_AMOUNTS = hideAmounts;
   const toggleHide = () => setHideAmounts(h => { const n=!h; try{ localStorage.setItem('spendwise_hide', n?'1':'0'); }catch{} return n; });
   const [showFabMenu,setShowFabMenu]=useState(false);
+  const [toast,setToast]=useState("");
+  useEffect(()=>{ if(!toast) return; const id=setTimeout(()=>setToast(""),5000); return ()=>clearTimeout(id); },[toast]);
+  // New tab always opens at the top.
+  const scrRef = useRef(null);
+  useEffect(()=>{ if(scrRef.current) scrRef.current.scrollTop = 0; },[tab]);
   const [transferModal,setTransferModal]=useState(false);
   const [editTxModal,setEditTxModal]=useState(null);
 
@@ -3351,7 +3378,6 @@ export default function App(){
     localStorage.setItem('spendwise_theme', newId);
   };
 
-  useEffect(()=>{const t=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(t);},[]);
 
   const activeTheme = THEMES.find(t => t.id === themeId) || THEMES[0];
 
@@ -3401,34 +3427,34 @@ export default function App(){
     });
   };
 
+  // Every save goes through here: modals close immediately, so a failed
+  // request must be surfaced instead of silently losing the change.
+  const safe = (fn) => async (...args) => {
+    try { await fn(...args); }
+    catch (e) { console.error(e); setToast(`Couldn't save: ${e?.message || "network error"}`); }
+  };
+
+  // How a transaction moves an account balance:
+  // bank: income adds, expense subtracts · credit card: expense adds debt, income/payment reduces it.
+  const balanceDelta = (acctId, type, amount) => {
+    const acct = uiAccounts.find(a => a.id === acctId);
+    if (!acct) return 0;
+    const sign = acct.type === "bank" ? (type === "income" ? 1 : -1) : (type === "income" ? -1 : 1);
+    return sign * Number(amount);
+  };
+  const today = localISODate();
+
   const handlePayCC = async ({ bankId, ccId, amount }) => {
-    // Both bank and CC get a transaction for the record
-    await addTransaction({amount, category:'other', note:'Payment to CC', type:'expense', date:new Date().toISOString().slice(0,10), accountId:bankId});
-    await addTransaction({amount, category:'other', note:'Payment from Bank', type:'income', date:new Date().toISOString().slice(0,10), accountId:ccId});
-    
-    // Decrease the balances directly
-    const bank = uiAccounts.find(a=>a.id===bankId);
-    if(bank){
-      await updateAccount(bank.id, { balance: bank.balance - amount });
-    }
-    const cc = uiAccounts.find(a=>a.id===ccId);
-    if(cc){
-      await updateAccount(cc.id, { balance: cc.balance - amount });
-    }
+    // Tagged as a transfer so it doesn't count as spending or income.
+    await addTransaction({amount, category:'other', note:'Payment to CC', type:'expense', date:today, accountId:bankId, tags:['__transfer__']});
+    await addTransaction({amount, category:'other', note:'Payment from Bank', type:'income', date:today, accountId:ccId, tags:['__transfer__']});
+    await adjustBalance(bankId, -amount);
+    await adjustBalance(ccId, -amount);
   };
 
   const handleAddTx = async (tx) => {
     await addTransaction(tx);
-    const acct = uiAccounts.find(a => a.id === tx.accountId);
-    if (acct) {
-      let change = 0;
-      if (acct.type === "bank") {
-         change = (tx.type === "income" ? tx.amount : -tx.amount);
-      } else {
-         change = (tx.type === "income" ? -tx.amount : tx.amount);
-      }
-      await updateAccount(acct.id, { balance: acct.balance + change });
-    }
+    await adjustBalance(tx.accountId, balanceDelta(tx.accountId, tx.type, tx.amount));
   };
 
   const handleClearHistory = async () => {
@@ -3450,103 +3476,43 @@ export default function App(){
   const handleTransfer = async ({ fromId, toId, amount }) => {
     const from = uiAccounts.find(a => a.id === fromId);
     const to = uiAccounts.find(a => a.id === toId);
-    const today = new Date().toISOString().slice(0,10);
-    const toName = to?.name || 'account';
-    const fromName = from?.name || 'account';
-    // Log tagged transactions so they are excluded from Reports & stats
-    await addTransaction({amount, category:'other', note:`Transfer → ${toName}`, type:'expense', date:today, accountId:fromId, tags:['__transfer__']});
-    await addTransaction({amount, category:'other', note:`Transfer ← ${fromName}`, type:'income', date:today, accountId:toId, tags:['__transfer__']});
-    if (from) await updateAccount(from.id, { balance: from.balance - amount });
-    if (to) await updateAccount(to.id, { balance: to.balance + amount });
+    // Tagged transactions are excluded from Reports & stats
+    await addTransaction({amount, category:'other', note:`Transfer → ${to?.name || 'account'}`, type:'expense', date:today, accountId:fromId, tags:['__transfer__']});
+    await addTransaction({amount, category:'other', note:`Transfer ← ${from?.name || 'account'}`, type:'income', date:today, accountId:toId, tags:['__transfer__']});
+    await adjustBalance(fromId, -amount);
+    await adjustBalance(toId, amount);
   };
 
   const handleEditTx = async (txId, changes) => {
-    const originalTx = transactions.find(t => t.id === txId);
-    if (originalTx) {
-      const newAmount = changes.amount !== undefined ? changes.amount : originalTx.amount;
-      const newType = changes.type !== undefined ? changes.type : originalTx.type;
-      const newAccountId = changes.accountId !== undefined ? changes.accountId : originalTx.accountId;
-
-      // 1. Calculate reversal for the original account
-      const oldAcct = uiAccounts.find(a => a.id === originalTx.accountId);
-      let oldBalanceChange = 0;
-      if (oldAcct) {
-        if (oldAcct.type === "bank") {
-          oldBalanceChange = originalTx.type === "income" ? -originalTx.amount : originalTx.amount;
-        } else {
-          oldBalanceChange = originalTx.type === "income" ? originalTx.amount : -originalTx.amount;
-        }
-      }
-
-      // 2. Calculate balance change for the new account
-      const newAcct = uiAccounts.find(a => a.id === newAccountId);
-      let newBalanceChange = 0;
-      if (newAcct) {
-        if (newAcct.type === "bank") {
-          newBalanceChange = newType === "income" ? newAmount : -newAmount;
-        } else {
-          newBalanceChange = newType === "income" ? -newAmount : newAmount;
-        }
-      }
-
-      // 3. Update the balances in Supabase and state
-      if (oldAcct && newAcct && oldAcct.id === newAcct.id) {
-        // Same account - apply both changes to it
-        const totalChange = oldBalanceChange + newBalanceChange;
-        await updateAccount(oldAcct.id, { balance: oldAcct.balance + totalChange });
-      } else {
-        // Different accounts
-        if (oldAcct) {
-          await updateAccount(oldAcct.id, { balance: oldAcct.balance + oldBalanceChange });
-        }
-        if (newAcct) {
-          await updateAccount(newAcct.id, { balance: newAcct.balance + newBalanceChange });
-        }
-      }
+    const orig = transactions.find(t => t.id === txId);
+    if (orig) {
+      const newAmount = changes.amount !== undefined ? changes.amount : orig.amount;
+      const newType = changes.type !== undefined ? changes.type : orig.type;
+      const newAccountId = changes.accountId !== undefined ? changes.accountId : orig.accountId;
+      await adjustBalance(orig.accountId, -balanceDelta(orig.accountId, orig.type, orig.amount));
+      await adjustBalance(newAccountId, balanceDelta(newAccountId, newType, newAmount));
     }
     await updateTransaction(txId, changes);
   };
 
   const handleDeleteTx = async (tx) => {
     const splitTag = tx.tags?.find(t => t.startsWith('split_'));
-    if (splitTag) {
-      const linked = transactions.filter(t => t.tags?.includes(splitTag));
-      for (const lt of linked) {
-        const acct = uiAccounts.find(a => a.id === (lt.accountId || lt.account_id));
-        if (acct) {
-          let reversal = 0;
-          if (acct.type === "bank") {
-            reversal = lt.type === "income" ? -lt.amount : lt.amount;
-          } else {
-            reversal = lt.type === "income" ? lt.amount : -lt.amount;
-          }
-          await updateAccount(acct.id, { balance: acct.balance + reversal });
-        }
-        await deleteTransaction(lt.id);
-      }
-    } else {
-      const acct = uiAccounts.find(a => a.id === (tx.accountId || tx.account_id));
-      if (acct) {
-        let reversal = 0;
-        if (acct.type === "bank") {
-          reversal = tx.type === "income" ? -tx.amount : tx.amount;
-        } else {
-          reversal = tx.type === "income" ? tx.amount : -tx.amount;
-        }
-        await updateAccount(acct.id, { balance: acct.balance + reversal });
-      }
-      await deleteTransaction(tx.id);
+    const targets = splitTag ? transactions.filter(t => t.tags?.includes(splitTag)) : [tx];
+    for (const t of targets) {
+      const acctId = t.accountId || t.account_id;
+      await adjustBalance(acctId, -balanceDelta(acctId, t.type, t.amount));
+      await deleteTransaction(t.id);
     }
   };
 
   // Normalise DB account row to UI shape
   const uiAccounts = accounts.map(a => ({
     ...a,
+    balance:  Number(a.balance) || 0,
     themeIdx: a.theme_idx ?? a.themeIdx,
     limit:    a.credit_limit ?? a.limit,
   }));
 
-  const timeStr=time.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:false});
 
   // Theme-aware nav icon sets — each theme gets a distinct visual language
   const NAV_ICONS = {
@@ -3650,11 +3616,11 @@ export default function App(){
       <div className="phone">
         <div className="island"/>
         <div className="sbar">
-          <div className="sbar-t">{timeStr}</div>
+          <div className="sbar-t"><StatusClock/></div>
           <div className="sbar-ic"><span>▲▲▲▲</span><span style={{marginLeft:4}}>WiFi</span><span style={{marginLeft:4}}>🔋</span></div>
         </div>
 
-        <div className="scr">
+        <div className="scr" ref={scrRef}>
           <DynamicIslandGlow transactions={transactions} budgets={budgets} />
           <AnimatePresence mode="wait" initial={false}>
           <motion.div key={tab}
@@ -3662,8 +3628,8 @@ export default function App(){
             transition={{duration:0.2,ease:[0.16,1,0.3,1]}}>
           {tab==="home"&&<HomeScreen accounts={uiAccounts} transactions={transactions} budgets={budgets} savings={savings} subscriptions={subscriptions} widgets={widgets} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} setTab={setTab} onSignOut={signOut} onPayBill={setPayCcModal}/>}
           {tab==="accounts"&&<AccountsScreen accounts={uiAccounts} transactions={transactions} onEditAcct={a=>setAcctModal(a)} onAddAcct={()=>setAcctModal("new")} onPayBill={setPayCcModal}/>}
-          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)} onClearHistory={handleClearHistory}/>}
-          {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={setBudget}/>}
+          {tab==="transactions"&&<TxScreen transactions={transactions} accounts={uiAccounts} onEditTx={tx=>setEditTxModal(tx)} onClearHistory={safe(handleClearHistory)}/>}
+          {tab==="budget"&&<BudgetScreen transactions={transactions} budgets={budgets} onBudgetChange={safe(setBudget)}/>}
           {tab==="more"&&(
             <div>
               <div className="ph au"><div className="ph-t">More</div><HideToggle/></div>
@@ -3721,11 +3687,20 @@ export default function App(){
           })}
         </div>
 
-        {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={handleAddTx}/>}
-        {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={acctModal==="new"?handleAddAccount:handleUpdateAccount} onDelete={deleteAccount}/>}
-        {payCcModal&&<PayCCModal creditCard={payCcModal} accounts={uiAccounts} onClose={()=>setPayCcModal(null)} onPay={handlePayCC}/>}
-        {transferModal&&<TransferModal accounts={uiAccounts} onClose={()=>setTransferModal(false)} onTransfer={handleTransfer}/>}
-        {editTxModal&&<EditTxModal tx={editTxModal} accounts={uiAccounts} onClose={()=>setEditTxModal(null)} onSave={handleEditTx} onDelete={handleDeleteTx}/>}
+        <AnimatePresence>
+          {toast&&(
+            <motion.div key="toast" role="alert" onClick={()=>setToast("")}
+              initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}}
+              style={{position:'absolute',top:'max(16px, env(safe-area-inset-top))',left:16,right:16,zIndex:300,background:'var(--red)',color:'#fff',borderRadius:14,padding:'12px 14px',fontSize:13,fontWeight:700,boxShadow:'0 10px 30px rgba(0,0,0,.4)'}}>
+              {toast}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {showAddTx&&<AddTxModal accounts={uiAccounts} onClose={()=>setShowAddTx(false)} onAdd={safe(handleAddTx)}/>}
+        {acctModal&&<AcctModal account={acctModal==="new"?null:acctModal} onClose={()=>setAcctModal(null)} onSave={safe(acctModal==="new"?handleAddAccount:handleUpdateAccount)} onDelete={safe(deleteAccount)}/>}
+        {payCcModal&&<PayCCModal creditCard={payCcModal} accounts={uiAccounts} onClose={()=>setPayCcModal(null)} onPay={safe(handlePayCC)}/>}
+        {transferModal&&<TransferModal accounts={uiAccounts} onClose={()=>setTransferModal(false)} onTransfer={safe(handleTransfer)}/>}
+        {editTxModal&&<EditTxModal tx={editTxModal} accounts={uiAccounts} onClose={()=>setEditTxModal(null)} onSave={safe(handleEditTx)} onDelete={safe(handleDeleteTx)}/>}
       </div>
     </div>
     </MotionConfig>

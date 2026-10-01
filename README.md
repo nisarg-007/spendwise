@@ -244,7 +244,13 @@ By default Vercel puts **Deployment Protection** on preview URLs (`*-projects.ve
 
 **Data flow.** Each hook loads its table for the signed-in `user_id`, keeps it in React state, and exposes `add / update / delete` helpers that write to Supabase and update state. Field names are mapped between snake_case (database) and camelCase (UI) inside the hooks — for example `theme_idx` ↔ `themeIdx` and `credit_limit` ↔ `limit`.
 
-**Balance consistency.** Adding, editing or deleting a transaction also updates the linked account balance, so the Net Worth always matches the ledger.
+**Balance consistency.** Adding, editing or deleting a transaction also updates the linked account balance, so the Net Worth always matches the ledger. All balance changes go through `adjustBalance(id, delta)` in `useAccounts`, which queues updates and reads the latest balance, so quick back-to-back changes (split receipts, transfers) can't overwrite each other. Amounts are rounded to cents.
+
+**Dates** are stored as `YYYY-MM-DD` in the device's local time zone (`localISODate` / `parseLocalDate` in `App.jsx`), so an evening expense never lands on tomorrow.
+
+**What counts as spending.** Transfers between accounts and credit-card payments are tagged `__transfer__` and excluded from income, expenses, budgets, reports and the health score. Home and Budget use the current calendar month; Reports follows the selected period (week, month, quarter, year).
+
+**Errors.** If a save fails (offline, Supabase paused), a red banner appears at the top instead of the change silently disappearing.
 
 **Theme preference** is stored in `localStorage` (`spendwise_theme`), so it is per device. Everything else lives in Supabase.
 
@@ -305,6 +311,7 @@ To add a theme, copy an existing object in `THEMES`, give it a new `id` and `nam
 | Preview link asks for a Vercel login | Deployment Protection | Use the production URL or disable protection |
 | `npm ci` fails: lock file out of sync | `package-lock.json` drifted | Run `npm install` and commit the updated lock file |
 | Env var change has no effect | CRA bakes env vars in at build time | Restart `npm start` / trigger a new Vercel deploy |
+| Items flicker or look faded while scrolling | Old scroll-reveal animation | Fixed — update to the latest version and reopen the app |
 | Want a clean slate | — | **More → Settings → Reset all data**, or run the SQL below |
 
 To reset from the Supabase **SQL Editor** instead (keeps accounts, zeroes balances, affects every user in the project):

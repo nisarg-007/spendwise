@@ -3,17 +3,9 @@
 // All data operations wrapped in clean hooks.
 // Import and use these in your App component.
 // ─────────────────────────────────────────────────────────────
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 
-const SAMPLE_ACCOUNTS = [
-  { type:'bank', name:'Chase Checking', bank:'Chase', balance:0, theme_idx:0, last4:'4521', icon:'🏦' },
-  { type:'bank', name:'Wells Savings', bank:'Wells Fargo', balance:0, theme_idx:3, last4:'8834', icon:'💰' },
-  { type:'bank', name:'Discover Checking', bank:'Discover', balance:0, theme_idx:1, last4:'2291', icon:'🏧' },
-  { type:'bank', name:'Ally Savings', bank:'Ally Bank', balance:0, theme_idx:4, last4:'6677', icon:'💎' },
-  { type:'credit', name:'Chase Sapphire', bank:'Chase', balance:0, credit_limit:10000, color:'#0f172a', last4:'7832', icon:'💳' },
-  { type:'credit', name:'Amex Gold', bank:'Amex', balance:0, credit_limit:15000, color:'#1e1b4b', last4:'3390', icon:'⚜️' },
-];
 
 // ── AUTH HOOK ─────────────────────────────────────────────────
 export function useAuth() {
@@ -82,6 +74,11 @@ export function useAuth() {
 export function useAccounts(userId) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading]   = useState(true);
+  // Latest balances, readable synchronously. Balance changes go through a
+  // queue so several quick updates (e.g. split transactions) never read a
+  // stale balance and overwrite each other.
+  const accountsRef = useRef([]);
+  const queueRef = useRef(Promise.resolve());
 
 
 
@@ -101,21 +98,7 @@ export function useAccounts(userId) {
       return;
     }
 
-    if (!data || data.length === 0) {
-      const { data: seeded, error: seedError } = await supabase
-        .from('accounts')
-        .insert(SAMPLE_ACCOUNTS.map(acct => ({ ...acct, user_id: userId })))
-        .select();
-      if (!seedError) {
-        setAccounts(seeded || []);
-      } else {
-        console.error('Seed accounts error:', seedError);
-        setAccounts([]);
-      }
-      setLoading(false);
-      return;
-    }
-
+    accountsRef.current = data || [];
     setAccounts(data || []);
     setLoading(false);
   }, [userId]);
@@ -129,6 +112,7 @@ export function useAccounts(userId) {
       .select()
       .single();
     if (error) throw error;
+    accountsRef.current = [...accountsRef.current, data];
     setAccounts(prev => [...prev, data]);
     return data;
   };
@@ -142,7 +126,20 @@ export function useAccounts(userId) {
       .select()
       .single();
     if (error) throw error;
+    accountsRef.current = accountsRef.current.map(a => a.id === id ? data : a);
     setAccounts(prev => prev.map(a => a.id === id ? data : a));
+  };
+
+  // Add `delta` to an account balance, serialized and rounded to cents.
+  const adjustBalance = (id, delta) => {
+    const run = queueRef.current.then(async () => {
+      const acct = accountsRef.current.find(a => a.id === id);
+      if (!acct || !delta) return;
+      const next = Math.round((Number(acct.balance) + delta) * 100) / 100;
+      await updateAccount(id, { balance: next });
+    });
+    queueRef.current = run.catch(() => {});
+    return run;
   };
 
   const deleteAccount = async (id) => {
@@ -152,13 +149,23 @@ export function useAccounts(userId) {
       .eq('id', id)
       .eq('user_id', userId);
     if (error) throw error;
+    accountsRef.current = accountsRef.current.filter(a => a.id !== id);
     setAccounts(prev => prev.filter(a => a.id !== id));
   };
 
-  return { accounts, loading, addAccount, updateAccount, deleteAccount, refetch: fetch };
+  return { accounts, loading, addAccount, updateAccount, adjustBalance, deleteAccount, refetch: fetch };
 }
 
 // ── TRANSACTIONS HOOK ─────────────────────────────────────────
+// Normalize DB snake_case → UI camelCase
+const normalizeTx = (row) => ({
+  ...row,
+  amount:        Number(row.amount),
+  accountId:     row.account_id,
+  taxDeductible: row.tax_deductible,
+  createdAt:     row.created_at,
+});
+
 export function useTransactions(userId) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -246,16 +253,11 @@ export function useTransactions(userId) {
     return normalizeTx(data);
   };
 
-  // Normalize DB snake_case → UI camelCase
-  const normalizeTx = (row) => ({
-    ...row,
-    accountId:     row.account_id,
-    taxDeductible: row.tax_deductible,
-    createdAt:     row.created_at,
-  });
+  // Stable array between renders (avoids needless re-renders/effects)
+  const uiTransactions = useMemo(() => transactions.map(normalizeTx), [transactions]);
 
   return {
-    transactions: transactions.map(normalizeTx),
+    transactions: uiTransactions,
     loading,
     addTransaction,
     updateTransaction,
@@ -429,7 +431,7 @@ export function useWidgetConfig(userId, defaults) {
         .from('widget_config')
         .select('config')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       if (data?.config) setWidgets({ ...defaults, ...data.config });
       setLoading(false);
     })();
