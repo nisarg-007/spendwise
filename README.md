@@ -35,6 +35,8 @@ A mobile-first personal finance app that feels like a native iPhone app. Track a
 ### Dashboard (modular widgets)
 The home screen is built from widgets you can switch on or off in **More → Customize**. Your choices are saved per user in the `widget_config` table.
 
+Only the essentials are on by default, so a fresh dashboard stays clean. Turn extras on when you need them.
+
 | Widget | What it shows | Default |
 |---|---|---|
 | Net Worth | Bank balances minus credit card debt | On |
@@ -42,13 +44,13 @@ The home screen is built from widgets you can switch on or off in **More → Cus
 | Bank Cards | Swipeable card carousel | On |
 | Credit Cards | Balances and utilization per card | On |
 | Monthly Summary | Income vs. expense ring chart | On |
-| Quick Stats | Savings rate, daily average, counts | On |
-| Spending Bars | Weekly spend bar chart | On |
-| Savings Goals | Progress toward each goal | On |
-| Subscriptions | Monthly recurring cost tracker | On |
-| CC Utilization | Credit-score impact meter | On |
 | Recent Transactions | Last 5 transactions | On |
-| Upcoming Bills | Bills due in the next 7 days | On |
+| Quick Stats | Savings rate, daily average, counts | Off |
+| Spending Bars | Weekly spend bar chart | Off |
+| Savings Goals | Progress toward each goal | Off |
+| Subscriptions | Monthly recurring cost tracker | Off |
+| CC Utilization | Credit-score impact meter | Off |
+| Upcoming Bills | Bills due in the next 7 days | Off |
 | Tax Summary | Tax-deductible expenses YTD | Off |
 | Mileage Tracker | Trip distance and reimbursement | Off |
 | Cash Flow | 30-day income/expense bars | Off |
@@ -62,9 +64,21 @@ The home screen is built from widgets you can switch on or off in **More → Cus
 - **Pay credit card bill** — pay a card from a bank account; both balances update.
 - **Edit/delete with balance correction** — editing a transaction re-adjusts the affected account balances.
 - **Budgets** — per-category monthly limits with progress tracking.
-- **Subscriptions** — recurring charges with billing cycle and next due date (read from Supabase; add/edit in the UI is on the roadmap).
+- **Subscriptions** — recurring charges with billing cycle and next due date (stored in Supabase; add/edit from the UI is on the roadmap, so the tab is hidden for now).
+- **Reset all data** — **More → Settings**. Deletes every transaction, budget, goal and subscription, sets all balances to $0 and restores the default dashboard. Accounts and cards are kept. You must type `RESET` to confirm.
+- **Clear History** — on the History tab; tap twice to delete all transactions. Balances are not changed.
 - **Reports** — category breakdowns and trends.
 - **History filters** — by type, account and search text, plus a tax-deductible view.
+
+### Navigation
+
+| Tab | What's there |
+|---|---|
+| Home | Dashboard widgets and the **+** button (add transaction, transfer) |
+| Accounts | Bank accounts and credit cards; tap a card to edit, **Pay Bill** on cards |
+| History | All transactions with filters; tap one to edit or delete |
+| Budget | Monthly limit per category |
+| More | **Reports**, **Customize** (themes + widgets), **Settings** (reset) |
 
 ### Experience
 - iPhone 16 Pro–style layout with a **Dynamic Island ambient glow** that reacts to your spending.
@@ -169,7 +183,7 @@ Run inside `spendwise/spendwise`:
 |---|---|
 | `npm start` | Dev server with hot reload on port 3000 |
 | `npm run build` | Production build into `build/` |
-| `CI=true npm run build` | Same build, but ESLint warnings fail it — **this is what Vercel runs**, use it to test before pushing |
+| `CI=true npm run build` | Strict build: ESLint warnings fail it. Most CI services run this way — keep it passing |
 | `npm test` | Jest test runner in watch mode |
 
 ---
@@ -178,12 +192,13 @@ Run inside `spendwise/spendwise`:
 
 1. Import the GitHub repo in [Vercel](https://vercel.com/new).
 2. Set **Root Directory** to `spendwise` (the inner folder).
+   Live app: **https://spendwise-nisu.vercel.app**
 3. Framework preset: **Create React App** (build `npm run build`, output `build`).
 4. Add both `REACT_APP_SUPABASE_*` variables under **Settings → Environment Variables** for Production and Preview.
 5. Deploy. Every push to `main` redeploys automatically.
 6. Add the Vercel URL to Supabase **Redirect URLs**.
 
-> Vercel builds with `CI=true`, which turns every ESLint warning into an error. Unused variables or missing hook dependencies will fail the deployment even though `npm start` works locally. Always run `CI=true npm run build` before pushing.
+> If your CI or Vercel project sets `CI=true`, every ESLint warning becomes a build error. Run `CI=true npm run build` before pushing to catch these early.
 
 By default Vercel puts **Deployment Protection** on preview URLs (`*-projects.vercel.app`), which asks for a Vercel login. Use the production domain to share the app, or turn protection off in **Settings → Deployment Protection**.
 
@@ -277,7 +292,7 @@ To add a theme, copy an existing object in `THEMES`, give it a new `id` and `nam
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Vercel build fails with `Treating warnings as errors because process.env.CI = true` | An ESLint warning (unused variable, hook dependency) | Run `CI=true npm run build` locally, fix the listed warnings, push again |
+| Build fails with `Treating warnings as errors because process.env.CI = true` | An ESLint warning (unused variable, hook dependency) | Run `CI=true npm run build` locally, fix the listed warnings, push again |
 | App loads but shows no data / spinner forever | Supabase free project is **paused** | Supabase dashboard → project → **Restore project**, wait ~2 min |
 | `Invalid API key` | Wrong or missing anon key | Check `.env.local` / Vercel env vars, no quotes or spaces; redeploy |
 | `new row violates row-level security policy` | Not signed in, or policies missing | Re-run `supabase_schema.sql` |
@@ -285,6 +300,18 @@ To add a theme, copy an existing object in `THEMES`, give it a new `id` and `nam
 | Preview link asks for a Vercel login | Deployment Protection | Use the production URL or disable protection |
 | `npm ci` fails: lock file out of sync | `package-lock.json` drifted | Run `npm install` and commit the updated lock file |
 | Env var change has no effect | CRA bakes env vars in at build time | Restart `npm start` / trigger a new Vercel deploy |
+| Want a clean slate | — | **More → Settings → Reset all data**, or run the SQL below |
+
+To reset from the Supabase **SQL Editor** instead (keeps accounts, zeroes balances, affects every user in the project):
+
+```sql
+delete from transactions;
+delete from budgets;
+delete from savings_goals;
+delete from subscriptions;
+delete from widget_config;
+update accounts set balance = 0;
+```
 
 ---
 
@@ -301,7 +328,7 @@ To add a theme, copy an existing object in `THEMES`, give it a new `id` and `nam
 ## Roadmap
 
 - [ ] Replace auto-login with the built-in `AuthScreen`
-- [ ] Savings goals and subscriptions CRUD wired to Supabase from the UI
+- [ ] Savings goals and subscriptions add/edit from the UI (then re-enable the Subscriptions tab)
 - [ ] CSV / PDF export from Reports
 - [ ] Proper PWA manifest (name, icons, theme color) and offline cache
 - [ ] Split `App.jsx` into per-screen files

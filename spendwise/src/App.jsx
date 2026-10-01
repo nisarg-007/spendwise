@@ -8,6 +8,7 @@ import {
   useSubscriptions,
   useWidgetConfig,
 } from './hooks/useSpendWise';
+import { supabase } from './supabaseClient';
 
 // ─── GOOGLE FONTS + GLOBAL CSS ────────────────────────────────────────────────
 const G = `
@@ -820,21 +821,21 @@ const CATS = [
 ];
 
 const ALL_WIDGETS = [
-  {id:"net_worth",name:"Net Worth",desc:"Total balance across all accounts",ic:"💰",def:true,tag:"free"},
-  {id:"health_score",name:"Financial Health Score",desc:"Overall financial health index & advice",ic:"🔮",def:true,tag:"premium"},
-  {id:"bank_cards",name:"Bank Cards",desc:"Swipeable card carousel",ic:"🏦",def:true,tag:"free"},
-  {id:"credit_cards",name:"Credit Cards",desc:"CC balances & utilization",ic:"💳",def:true,tag:"free"},
-  {id:"monthly_ring",name:"Monthly Summary",desc:"Income vs expense ring chart",ic:"📊",def:true,tag:"free"},
-  {id:"quick_stats",name:"Quick Stats",desc:"Savings rate, daily avg, counts",ic:"⚡",def:true,tag:"free"},
-  {id:"spending_bars",name:"Spending Bars",desc:"Weekly spend bar chart",ic:"📈",def:true,tag:"free"},
-  {id:"savings_goals",name:"Savings Goals",desc:"Progress toward your goals",ic:"🎯",def:true,tag:"premium"},
-  {id:"subscriptions",name:"Subscriptions",desc:"Monthly recurring tracker",ic:"🔄",def:true,tag:"premium"},
-  {id:"cc_util",name:"CC Utilization",desc:"Credit score impact meter",ic:"📉",def:true,tag:"premium"},
-  {id:"tax_summary",name:"Tax Summary",desc:"Deductible expenses YTD",ic:"🧾",def:false,tag:"premium"},
-  {id:"mileage",name:"Mileage Tracker",desc:"Trip distance & reimbursement",ic:"🚗",def:false,tag:"premium"},
-  {id:"cash_flow",name:"Cash Flow",desc:"30-day income/expense bars",ic:"💸",def:false,tag:"premium"},
-  {id:"recent_tx",name:"Recent Transactions",desc:"Last 5 transactions",ic:"📋",def:true,tag:"free"},
-  {id:"bills_upcoming",name:"Upcoming Bills",desc:"Bills due in next 7 days",ic:"📅",def:true,tag:"premium"},
+  {id:"net_worth",name:"Net Worth",desc:"Total balance across all accounts",ic:"💰",def:true,tag:"main"},
+  {id:"health_score",name:"Financial Health Score",desc:"Overall financial health index & advice",ic:"🔮",def:true,tag:"extra"},
+  {id:"bank_cards",name:"Bank Cards",desc:"Swipeable card carousel",ic:"🏦",def:true,tag:"main"},
+  {id:"credit_cards",name:"Credit Cards",desc:"CC balances & utilization",ic:"💳",def:true,tag:"main"},
+  {id:"monthly_ring",name:"Monthly Summary",desc:"Income vs expense ring chart",ic:"📊",def:true,tag:"main"},
+  {id:"quick_stats",name:"Quick Stats",desc:"Savings rate, daily avg, counts",ic:"⚡",def:false,tag:"main"},
+  {id:"spending_bars",name:"Spending Bars",desc:"Weekly spend bar chart",ic:"📈",def:false,tag:"main"},
+  {id:"savings_goals",name:"Savings Goals",desc:"Progress toward your goals",ic:"🎯",def:false,tag:"extra"},
+  {id:"subscriptions",name:"Subscriptions",desc:"Monthly recurring tracker",ic:"🔄",def:false,tag:"extra"},
+  {id:"cc_util",name:"CC Utilization",desc:"Credit score impact meter",ic:"📉",def:false,tag:"extra"},
+  {id:"tax_summary",name:"Tax Summary",desc:"Deductible expenses YTD",ic:"🧾",def:false,tag:"extra"},
+  {id:"mileage",name:"Mileage Tracker",desc:"Trip distance & reimbursement",ic:"🚗",def:false,tag:"extra"},
+  {id:"cash_flow",name:"Cash Flow",desc:"30-day income/expense bars",ic:"💸",def:false,tag:"extra"},
+  {id:"recent_tx",name:"Recent Transactions",desc:"Last 5 transactions",ic:"📋",def:true,tag:"main"},
+  {id:"bills_upcoming",name:"Upcoming Bills",desc:"Bills due in next 7 days",ic:"📅",def:false,tag:"extra"},
 ];
 
 const fmt = n => "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1682,7 +1683,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="card">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <div style={{fontSize:13,fontWeight:800}}>Cash Flow — 30 Days</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
             <div style={{display:"flex",alignItems:"flex-end",gap:4,height:80}}>
               {cashFlow.map((d,i)=>(
@@ -1709,7 +1709,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="sh">
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div className="sh-t">🎯 Savings Goals</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
           </div>
           {savings.map(sg=>{
@@ -1748,7 +1747,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="sh">
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div className="sh-t">🔄 Subscriptions</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
             <div className="sh-a" onClick={()=>setTab("subscriptions")}>Manage</div>
           </div>
@@ -1777,7 +1775,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="sh">
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <div className="sh-t">📅 Due Soon</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
           </div>
           <div style={{margin:"0 18px 14px",background:"rgba(244,63,94,0.06)",border:"1px solid rgba(244,63,94,0.15)",borderRadius:16,padding:"4px 0"}}>
@@ -1805,7 +1802,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
               <div style={{fontSize:13,fontWeight:800}}>Credit Utilization</div>
               <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                <span className="ftag ftag-p">PREMIUM</span>
                 <span className="pill" style={{background:ccUtil>.3?"rgba(244,63,94,0.15)":"rgba(16,185,129,0.15)",color:ccUtil>.3?"var(--red)":"var(--green)"}}>{Math.round(ccUtil*100)}%</span>
               </div>
             </div>
@@ -1824,7 +1820,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="card" style={{background:"linear-gradient(135deg,#0a1628,#0f2846)",border:"1px solid rgba(14,165,233,0.2)"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
               <div style={{fontSize:13,fontWeight:800,color:"var(--sky)"}}>🧾 Tax Deductibles YTD</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
             <div style={{fontSize:32,fontWeight:900,letterSpacing:-1.5,fontFamily:"var(--mono)",color:"var(--sky)",marginBottom:8}}>{fmt(taxDeductible)}</div>
             <div style={{fontSize:11,color:"rgba(14,165,233,0.6)"}}>
@@ -1840,7 +1835,6 @@ function HomeScreen({accounts,transactions,budgets,savings,subscriptions,widgets
           <div className="card" style={{background:"linear-gradient(135deg,#0a1a0a,#0f3d1a)",border:"1px solid rgba(132,204,22,0.2)"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}>
               <div style={{fontSize:13,fontWeight:800,color:"var(--lime)"}}>🚗 Mileage Tracker</div>
-              <span className="ftag ftag-p">PREMIUM</span>
             </div>
             <div style={{display:"flex",gap:16}}>
               <div><div style={{fontSize:11,color:"rgba(132,204,22,0.6)"}}>Miles Logged</div><div style={{fontSize:24,fontWeight:900,fontFamily:"var(--mono)",color:"var(--lime)"}}>347 mi</div></div>
@@ -1968,6 +1962,7 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
   const [fCat]=useState("all");
   const [search,setSearch]=useState("");
   const [showTax,setShowTax]=useState(false);
+  const [confirmClear,setConfirmClear]=useState(false);
 
   let filtered=transactions;
   if(fType!=="all") filtered=filtered.filter(t=>t.type===fType);
@@ -1989,7 +1984,7 @@ function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {showTax&&<span className="ftag ftag-p">TAX</span>}
           <div style={{fontSize:13,fontWeight:700,fontFamily:"var(--mono)",color:totalFiltered>=0?"var(--green)":"var(--red)"}}>{totalFiltered>=0?"+":""}{fmt(totalFiltered)}</div>
-          <button onClick={onClearHistory} style={{padding:"6px 12px",borderRadius:999,background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:"white",fontSize:12,cursor:"pointer"}}>Clear History</button>
+          <button onClick={()=>{ if(confirmClear){ setConfirmClear(false); onClearHistory(); } else { setConfirmClear(true); setTimeout(()=>setConfirmClear(false),3000); } }} style={{padding:"6px 12px",borderRadius:999,background:confirmClear?"rgba(239,68,68,0.15)":"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",color:confirmClear?"var(--red)":"var(--text)",fontSize:12,cursor:"pointer"}}>{confirmClear?"Tap again to clear":"Clear History"}</button>
         </div>
       </div>
 
@@ -2154,7 +2149,6 @@ function SubsScreen({subscriptions,setSubscriptions}){
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div className="ph-t">Subscriptions</div>
-        <span className="ftag ftag-p">PREMIUM</span>
       </div>
 
       {/* Summary */}
@@ -2258,7 +2252,6 @@ function ReportsScreen({transactions,accounts}){
     <div style={{paddingBottom:20}}>
       <div className="ph au">
         <div className="ph-t">Reports</div>
-        <span className="ftag ftag-p">PREMIUM</span>
       </div>
 
       {/* Period selector */}
@@ -2359,7 +2352,6 @@ function ReportsScreen({transactions,accounts}){
           <div style={{fontSize:13,fontWeight:700}}>Export Report</div>
           <div style={{fontSize:11,color:"var(--t2)",marginTop:2}}>CSV / PDF export available in full app</div>
         </div>
-        <span className="ftag ftag-p">PREMIUM</span>
       </div>
     </div>
   );
@@ -2367,8 +2359,8 @@ function ReportsScreen({transactions,accounts}){
 
 // ─── CUSTOMIZE SCREEN ─────────────────────────────────────────────────────────
 function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
-  const free=ALL_WIDGETS.filter(w=>w.tag==="free");
-  const prem=ALL_WIDGETS.filter(w=>w.tag==="premium");
+  const free=ALL_WIDGETS.filter(w=>w.tag==="main");
+  const prem=ALL_WIDGETS.filter(w=>w.tag==="extra");
   return (
     <div style={{paddingBottom:20}}>
       <div className="ph au">
@@ -2420,7 +2412,7 @@ function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
         })}
       </div>
 
-      <div className="sh"><div className="sh-t">Free Widgets</div><span className="ftag ftag-f">FREE</span></div>
+      <div className="sh"><div className="sh-t">Main Widgets</div></div>
       <div className="au d2" style={{padding:"0 18px",display:"flex",flexDirection:"column",gap:9}}>
         {free.map(w=>(
           <div key={w.id} className="wr">
@@ -2432,7 +2424,7 @@ function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
         ))}
       </div>
 
-      <div className="sh" style={{marginTop:14}}><div className="sh-t">Premium Widgets</div><span className="ftag ftag-p">PREMIUM</span></div>
+      <div className="sh" style={{marginTop:14}}><div className="sh-t">Extra Widgets</div><span style={{fontSize:11,color:"var(--t2)"}}>off by default</span></div>
       <div className="au d3" style={{padding:"0 18px",display:"flex",flexDirection:"column",gap:9}}>
         {prem.map(w=>(
           <div key={w.id} className="wr">
@@ -2442,6 +2434,54 @@ function CustomizeScreen({widgets,onToggle,currentThemeId,onSelectTheme}){
             <Toggle on={!!widgets[w.id]} onToggle={()=>onToggle(w.id)}/>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS SCREEN ──────────────────────────────────────────────────────────
+function SettingsScreen({accounts,txCount,onReset}){
+  const [step,setStep]=useState(0);      // 0 idle · 1 confirm · 2 working
+  const [typed,setTyped]=useState("");
+  const [err,setErr]=useState("");
+  const card={margin:"0 18px 14px",background:"var(--s1)",border:"1px solid var(--border)",borderRadius:16,padding:"16px"};
+  const run=async()=>{
+    setStep(2);setErr("");
+    try{ await onReset(); }catch(e){ setErr(e.message||"Reset failed"); setStep(1); }
+  };
+  return (
+    <div style={{paddingBottom:20}}>
+      <div className="sh"><div className="sh-t">⚙️ Settings</div></div>
+      <div className="au d1" style={card}>
+        <div style={{fontSize:13,fontWeight:800,color:"var(--text)"}}>Your data</div>
+        <div style={{fontSize:12,color:"var(--t2)",marginTop:6,lineHeight:1.6}}>
+          {accounts.length} accounts · {txCount} transactions
+        </div>
+      </div>
+      <div className="au d2" style={{...card,border:"1px solid rgba(239,68,68,0.35)"}}>
+        <div style={{fontSize:13,fontWeight:800,color:"var(--red)"}}>Reset all data</div>
+        <div style={{fontSize:12,color:"var(--t2)",marginTop:6,lineHeight:1.6}}>
+          Deletes every transaction, budget, goal and subscription, and sets all account balances to $0.
+          Your accounts and cards stay. This cannot be undone.
+        </div>
+        {step===0&&(
+          <button onClick={()=>setStep(1)} style={{marginTop:12,width:"100%",padding:"12px",borderRadius:12,border:"1px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.1)",color:"var(--red)",fontWeight:800,fontSize:13,cursor:"pointer"}}>Reset all data…</button>
+        )}
+        {step>=1&&(
+          <div style={{marginTop:12}}>
+            <div style={{fontSize:12,color:"var(--text)",marginBottom:6}}>Type <b>RESET</b> to confirm</div>
+            <input value={typed} onChange={e=>setTyped(e.target.value)} placeholder="RESET" autoCapitalize="characters"
+              style={{width:"100%",boxSizing:"border-box",padding:"11px 12px",borderRadius:10,border:"1px solid var(--border2)",background:"var(--s2)",color:"var(--text)",fontSize:14,outline:"none"}}/>
+            {err&&<div style={{fontSize:12,color:"var(--red)",marginTop:8}}>{err}</div>}
+            <div style={{display:"flex",gap:8,marginTop:10}}>
+              <button onClick={()=>{setStep(0);setTyped("");setErr("");}} disabled={step===2} style={{flex:1,padding:"12px",borderRadius:12,border:"1px solid var(--border2)",background:"transparent",color:"var(--text)",fontWeight:700,fontSize:13,cursor:"pointer"}}>Cancel</button>
+              <button onClick={run} disabled={typed.trim().toUpperCase()!=="RESET"||step===2}
+                style={{flex:1,padding:"12px",borderRadius:12,border:"none",background:"var(--red)",color:"#fff",fontWeight:800,fontSize:13,cursor:"pointer",opacity:typed.trim().toUpperCase()==="RESET"&&step!==2?1:0.4}}>
+                {step===2?"Resetting…":"Reset now"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3356,6 +3396,18 @@ export default function App(){
     await clearTransactions();
   };
 
+  // Wipes transactions, budgets, goals, subscriptions and widget layout,
+  // keeps every account but sets its balance to $0.
+  const handleResetAll = async () => {
+    for (const t of ['transactions','budgets','savings_goals','subscriptions','widget_config']) {
+      const { error } = await supabase.from(t).delete().eq('user_id', uid);
+      if (error) throw error;
+    }
+    const { error } = await supabase.from('accounts').update({ balance: 0 }).eq('user_id', uid);
+    if (error) throw error;
+    window.location.reload();
+  };
+
   const handleTransfer = async ({ fromId, toId, amount }) => {
     const from = uiAccounts.find(a => a.id === fromId);
     const to = uiAccounts.find(a => a.id === toId);
@@ -3571,12 +3623,13 @@ export default function App(){
             <div>
               <div className="ph au"><div className="ph-t">More</div></div>
               <div className="au d1 sel-row" style={{padding:"0 18px 12px"}}>
-                {[["reports","📊 Reports"],["subscriptions","🔄 Subscriptions"],["customize","🎨 Customize"]].map(([v,l])=>(
+                {[["reports","📊 Reports"],["customize","🎨 Customize"],["settings","⚙️ Settings"]].map(([v,l])=>(
                   <div key={v} className={`chip ${moreSub===v?"on":""}`} onClick={()=>setMoreSub(v)}>{l}</div>
                 ))}
               </div>
               {moreSub==="reports"&&<ReportsScreen transactions={transactions} accounts={uiAccounts}/>}
               {moreSub==="subscriptions"&&<SubsScreen subscriptions={subscriptions} setSubscriptions={()=>{}}/>}
+              {moreSub==="settings"&&<SettingsScreen accounts={uiAccounts} txCount={transactions.length} onReset={handleResetAll}/>}
               {moreSub==="customize"&&<CustomizeScreen widgets={widgets} onToggle={toggleWidget} currentThemeId={themeId} onSelectTheme={handleSelectTheme}/>}
             </div>
           )}
