@@ -819,33 +819,6 @@ const CATS = [
   {id:"other",lb:"Other",ic:"💫",col:"#64748B"},
 ];
 
-const INIT_ACCTS = [
-  {id:"ba1",type:"bank",name:"Chase Checking",bank:"Chase",balance:0,themeIdx:0,last4:"4521",icon:"🏦"},
-  {id:"ba2",type:"bank",name:"Wells Savings",bank:"Wells Fargo",balance:0,themeIdx:3,last4:"8834",icon:"💰"},
-  {id:"ba3",type:"bank",name:"Discover Checking",bank:"Discover",balance:0,themeIdx:1,last4:"2291",icon:"🏧"},
-  {id:"ba4",type:"bank",name:"Ally Savings",bank:"Ally Bank",balance:0,themeIdx:4,last4:"6677",icon:"💎"},
-  {id:"cc1",type:"credit",name:"Chase Sapphire",bank:"Chase",balance:0,limit:10000,color:CC_COLORS[0],last4:"7832",icon:"💳"},
-  {id:"cc2",type:"credit",name:"Amex Gold",bank:"Amex",balance:0,limit:15000,color:CC_COLORS[1],last4:"3390",icon:"⚜️"},
-];
-
-const INIT_TX = [];
-
-const INIT_BUDGETS = {food:0,transport:0,shopping:0,health:0,entertainment:0,bills:0,travel:0,grocery:0,dining:0,fuel:0,education:0,other:0};
-
-const INIT_SAVINGS = [
-  {id:"sg1",name:"MacBook Pro",icon:"💻",target:0,saved:0,color:"#7B6FFF",deadline:"2025-06-01"},
-  {id:"sg2",name:"Japan Trip",icon:"🗾",target:0,saved:0,color:"#10B981",deadline:"2025-09-01"},
-  {id:"sg3",name:"Emergency Fund",icon:"🛡️",target:0,saved:0,color:"#F59E0B",deadline:"2025-12-31"},
-];
-
-const INIT_SUBS = [
-  {id:"sub1",name:"Netflix",icon:"🎬",amount:12.99,cycle:"Monthly",nextDue:"2025-04-25",color:"#EF4444"},
-  {id:"sub2",name:"Spotify",icon:"🎵",amount:9.99,cycle:"Monthly",nextDue:"2025-04-19",color:"#1DB954"},
-  {id:"sub3",name:"Gym",icon:"💪",amount:85,cycle:"Monthly",nextDue:"2025-04-25",color:"#F59E0B"},
-  {id:"sub4",name:"iCloud",icon:"☁️",amount:2.99,cycle:"Monthly",nextDue:"2025-04-22",color:"#60A5FA"},
-  {id:"sub5",name:"AWS",icon:"🔧",amount:24.5,cycle:"Monthly",nextDue:"2025-04-28",color:"#FF9900"},
-];
-
 const ALL_WIDGETS = [
   {id:"net_worth",name:"Net Worth",desc:"Total balance across all accounts",ic:"💰",def:true,tag:"free"},
   {id:"health_score",name:"Financial Health Score",desc:"Overall financial health index & advice",ic:"🔮",def:true,tag:"premium"},
@@ -916,6 +889,7 @@ function AnimatedNumber({ value, formatter = (n) => n.toFixed(0), duration = 700
     };
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return <>{formatter(displayValue)}</>;
@@ -1991,7 +1965,7 @@ function AccountsScreen({accounts,transactions,onEditAcct,onAddAcct,onPayBill}){
 function TxScreen({transactions,accounts,onEditTx,onClearHistory}){
   const [fType,setFType]=useState("all");
   const [fAcct,setFAcct]=useState("all");
-  const [fCat,setFCat]=useState("all");
+  const [fCat]=useState("all");
   const [search,setSearch]=useState("");
   const [showTax,setShowTax]=useState(false);
 
@@ -2650,6 +2624,7 @@ function AddTxModal({accounts,onClose,onAdd}){
       }
     }
     setAutoDetected(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[note, type]);
 
   const handleNum=v=>{
@@ -2948,6 +2923,7 @@ function TransferModal({accounts, onClose, onTransfer}) {
     } else if (banks.length === 1 && !fromId) {
       setFromId(banks[0].id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleNum = v => {
@@ -3167,6 +3143,8 @@ const AUTH_STYLE = `
     padding:10px 14px;font-size:12px;color:var(--green);margin-bottom:12px;font-weight:600;}
 `;
 
+// Kept for switching back to manual email/password login (see README).
+// eslint-disable-next-line no-unused-vars
 function AuthScreen({ onSignIn, onSignUp }) {
   const [mode, setMode]       = useState('signin');   // 'signin' | 'signup'
   const [email, setEmail]     = useState('');
@@ -3268,8 +3246,8 @@ export default function App(){
   const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts(uid);
   const { transactions, addTransaction, updateTransaction, deleteTransaction, clearTransactions } = useTransactions(uid);
   const { budgets, setBudget }                                  = useBudgets(uid);
-  const { savings, addGoal, updateGoal, deleteGoal }            = useSavingsGoals(uid);
-  const { subscriptions, addSubscription, deleteSubscription }  = useSubscriptions(uid);
+  const { savings }                                             = useSavingsGoals(uid);
+  const { subscriptions }                                       = useSubscriptions(uid);
 
   const initW={};
   ALL_WIDGETS.forEach(w=>{initW[w.id]=w.def;});

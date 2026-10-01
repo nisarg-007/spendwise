@@ -433,6 +433,7 @@ export function useWidgetConfig(userId, defaults) {
       if (data?.config) setWidgets({ ...defaults, ...data.config });
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const toggleWidget = async (id) => {
